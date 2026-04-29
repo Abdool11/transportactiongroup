@@ -1,105 +1,130 @@
-# Transport Action Group — Next.js 15 Frontend Package
+# Transport Action Group (TAG)
 
-**Stack:** Next.js 15 (App Router) · TypeScript · Tailwind CSS · shadcn/ui  
-**Role in ecosystem:** Flagship public platform — creates the enabling environment for green freight transformation. Attracts DFIs, donors, government bodies, industry associations, and ecosystem collaborators.
+**Website:** [transportactiongroup.co.za](https://transportactiongroup.co.za)
 
----
-
-## Component Inventory
-
-### Layout Components (`/components/layout/`)
-
-| Component | Purpose | Props |
-|---|---|---|
-| `Navigation.tsx` | Top navigation bar with logo, nav links, mobile menu, and CTA button | None — reads from `lib/constants.ts` |
-| `Footer.tsx` | Site footer with four-column link grid and ecosystem links | None — reads from `lib/constants.ts` |
-
-### Page Components (`/app/`)
-
-| Route | File | Dynamic Data Required |
-|---|---|---|
-| `/` | `app/page.tsx` | Impact strip metrics via `/api/metrics` |
-| `/about` | `app/about/page.tsx` | None — static content |
-| `/services` | `app/services/page.tsx` | None — static content |
-| `/green-freight` | `app/green-freight/page.tsx` | None — static content |
-| `/electric-truck` | `app/electric-truck/page.tsx` | None — static content |
-| `/academy` | `app/academy/page.tsx` | None — links to GFA |
-| `/books` | `app/books/page.tsx` | Publications list via `/api/publications` |
-| `/knowledge-hub` | `app/knowledge-hub/page.tsx` | Articles/resources via `/api/knowledge` |
-| `/ecosystem-partners` | `app/ecosystem-partners/page.tsx` | Partners list via `/api/partners` |
-| `/partner-with-tag` | `app/partner-with-tag/page.tsx` | None — static content |
-| `/contact` | `app/contact/page.tsx` | Form submission via Server Action |
+TAG is a national advisory and implementation platform for green freight and electric truck action plans. This repository contains the full source code for the TAG website.
 
 ---
 
-## Data Flow
+## Technology Stack
 
-### Impact Strip (Homepage Section 4)
-```
-Client → /api/metrics → { action_plans, workshops, partners, countries, last_updated, data_source }
-```
-- Fetched client-side with 15-minute cache
-- Falls back to `IMPACT_STRIP_FALLBACK` in `lib/constants.ts` if API unavailable
-- `data_source: "demo"` triggers yellow warning banner in UI
-
-### Enquiry Form (`/contact`)
-```
-User fills form → Server Action (submitEnquiry) → POST /api/submit-enquiry
-                                                 → Supabase: enquiry_submissions table
-                                                 → Email notification to owner
-```
-**Form fields:** organisation_name, organisation_role, contact_name, email, mobile, fleet_size (optional), nature_of_enquiry, enquiry_type (enum)  
-**Enquiry types:** `dfi` | `government` | `industry_body` | `fleet` | `partnership` | `other`
+| Layer | Technology |
+| :--- | :--- |
+| Framework | Next.js 14 (App Router, standalone output) |
+| Language | TypeScript |
+| Styling | Tailwind CSS |
+| Database | Supabase (PostgreSQL) |
+| Email | Resend |
+| Auth | JWT (custom admin auth) |
+| Deployment | Node.js standalone + Nginx + PM2 |
 
 ---
 
-## Static Strings
+## Project Structure
 
-All static strings, labels, and copy live in `lib/constants.ts`. Do not hardcode strings in page or component files.
+```
+app/                    # Next.js App Router pages and API routes
+  api/                  # Backend API routes
+  admin/                # Admin dashboard (JWT protected)
+  tco-calculator/       # TCO Calculator with Daily Energy panel
+  green-freight/        # Green Freight content pages
+  electric-truck/       # Electric Truck content pages
+  academy/              # Academy and training pages
+  books/                # Publications and books
+  ecosystem-partners/   # Ecosystem partner directory
+  partner-with-tag/     # Partner registration
+  about/                # About TAG
+  contact/              # Contact form
+components/             # Shared React components
+lib/                    # Utilities, constants, Supabase client
+public/                 # Static assets (images, fonts)
+```
 
-All external URLs use `process.env.NEXT_PUBLIC_*` with fallbacks in `ECOSYSTEM_URLS`. Set these in Vercel environment variables.
+---
+
+## Local Development
+
+```bash
+git clone https://github.com/Abdool11/transportactiongroup.git
+cd transportactiongroup
+npm install
+cp .env.local.example .env.local
+# Fill in .env.local values
+npm run dev
+```
+
+Site runs at `http://localhost:3000`.
 
 ---
 
 ## Environment Variables
 
-See `.env.example` for the full list. Key variables:
-
-| Variable | Purpose |
-|---|---|
-| `NEXT_PUBLIC_GFA_URL` | GreenFreightAcademy site URL |
-| `NEXT_PUBLIC_BETTERDRIVER_URL` | BetterDriver site URL |
-| `NEXT_PUBLIC_ZERO_AFRICA_URL` | ZeroAfrica site URL |
-| `NEXT_PUBLIC_TAG_API_URL` | Base URL for the TAG API layer |
-| `NEXT_PUBLIC_METRICS_ENDPOINT` | `/api/metrics` endpoint |
-
----
-
-## TypeScript Types
-
-All data shapes are defined in `types/index.ts`. Key interfaces:
-
-- `Metric` — impact strip data from `/api/metrics`
-- `Publication` — books and frameworks list item
-- `EnquiryFormData` — contact form submission payload
-- `EnquiryType` — union type for enquiry classification
+| Variable | Required | Description |
+| :--- | :--- | :--- |
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anonymous key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase service role key |
+| `ADMIN_EMAIL` | Yes | Admin login email |
+| `ADMIN_PASSWORD` | Yes | Admin login password |
+| `ADMIN_JWT_SECRET` | Yes | Secret for signing admin JWT tokens |
+| `RESEND_API_KEY` | Yes | Resend API key for contact form emails |
+| `NEXT_PUBLIC_SITE_URL` | Yes | Full URL of this site in production |
+| `NEXT_PUBLIC_GFA_URL` | Yes | Green Freight Academy site URL |
+| `NEXT_PUBLIC_BD_URL` | Yes | BetterDriver site URL |
 
 ---
 
-## Mock Data Removal Checklist
+## Branching and Version Control Workflow
 
-Before going live, remove or replace the following:
+This repository follows traditional Git feature branch workflow. All changes go through a branch and Pull Request — nothing is pushed directly to `main`.
 
-- [ ] `IMPACT_STRIP_FALLBACK` in `lib/constants.ts` — replace with live `/api/metrics` fetch
-- [ ] `PUBLICATIONS_PLACEHOLDER` in `lib/constants.ts` — replace with live `/api/publications` fetch
-- [ ] Yellow `[DEMO DATA]` banner in homepage impact strip — remove once `data_source === "live"`
-- [ ] Stub inner pages (`/services`, `/green-freight`, etc.) — replace with real content
+### Branch Naming Convention
+
+| Type | Pattern | Example |
+| :--- | :--- | :--- |
+| New feature | `feature/short-description` | `feature/tco-export-pdf` |
+| Bug fix | `fix/short-description` | `fix/contact-form-validation` |
+| Content update | `content/short-description` | `content/update-homepage-hero` |
+| Hotfix (urgent) | `hotfix/short-description` | `hotfix/admin-login-broken` |
+
+### Step-by-Step Workflow
+
+1. Create a branch from `main`: `git checkout -b feature/your-feature-name`
+2. Make changes and commit: `git commit -m "feat: describe what changed and why"`
+3. Push the branch: `git push origin feature/your-feature-name`
+4. Open a Pull Request on GitHub against `main`
+5. Review the diff — GitHub flags any conflicts before merge
+6. Approve and merge to `main`
+7. Delete the feature branch after merging
+
+### Commit Message Format
+
+```
+feat: add PDF export to TCO calculator
+fix: correct nginx static assets block
+content: update Green Freight page with 2025 statistics
+chore: update dependencies
+```
 
 ---
 
-## Deployment Notes
+## Deployment
 
-- Deploy to Vercel. Set all `NEXT_PUBLIC_*` environment variables in the Vercel dashboard.
-- The Next.js build produces a `standalone` output — use `next start` in production.
-- The build will warn about chunk size — this is expected and does not affect functionality.
-- The `/api/*` routes are **not** in this package — they are Asif's API layer, deployed separately or as Vercel serverless functions.
+The app is packaged as a standalone tar.gz including `server.js`, `pm2.config.js`, `nginx.conf`, `deploy.sh`, `QUICK-START-CARD.md`, and `.env.local.example`.
+
+> **Important:** The Nginx config must include a `location /_next/static/` block pointing to the `.next/static/` directory. Without this the site loads without any CSS or JavaScript styling. This is already included in the provided `nginx.conf`.
+
+---
+
+## Admin Access
+
+Admin backend at `/admin/login`. Credentials are set via `ADMIN_EMAIL` and `ADMIN_PASSWORD` environment variables — never committed to this repository.
+
+---
+
+## Related Repositories
+
+| Site | Repository |
+| :--- | :--- |
+| Green Freight Academy | [Abdool11/greenfreightacademy](https://github.com/Abdool11/greenfreightacademy) |
+| BetterDriver | [Abdool11/betterdriver](https://github.com/Abdool11/betterdriver) |
