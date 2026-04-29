@@ -171,10 +171,10 @@ const ZAR_DEFAULTS: Inputs = {
   dieselFinanced: true, dieselDepositPct: 10, dieselFinanceRate: 12, dieselFinanceTerm: 60,
   dieselPurchasePrice: 2200000, dieselFuelConsumption: 38, dieselFuelPrice: 24.5,
   dieselFuelEscalation: 6, dieselMaintenanceCpm: 0.85, dieselInsuranceAnnual: 85000, dieselResidualPct: 15,
-  electricMonthlyKm: 9000, electricVehicleLifeYears: 8,
-  electricFinanced: true, electricDepositPct: 10, electricFinanceRate: 11, electricFinanceTerm: 60,
+  electricMonthlyKm: 10000, electricVehicleLifeYears: 7,
+  electricFinanced: true, electricDepositPct: 10, electricFinanceRate: 12, electricFinanceTerm: 60,
   electricPurchasePrice: 4200000, electricEnergyConsumption: 160, electricEnergyPrice: 2.8,
-  electricEnergyEscalation: 2, electricMaintenanceCpm: 0.35, electricInsuranceAnnual: 95000, electricResidualPct: 20,
+  electricEnergyEscalation: 2, electricMaintenanceCpm: 0.35, electricInsuranceAnnual: 95000, electricResidualPct: 15,
 };
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -569,9 +569,9 @@ export default function TCOCalculatorPage() {
             </Link>
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
               <div>
-                <h1 className="mb-3">Electric vs Diesel TCO Calculator</h1>
+                <h1 className="mb-3 whitespace-nowrap">Electric vs Diesel TCO Calculator</h1>
                 <p className="text-muted-foreground leading-relaxed max-w-3xl text-sm">
-                  Compare the total cost of ownership of a battery electric truck against a diesel equivalent over the full vehicle life. Adjust currency, truck type, and use case below. All defaults are set for South African conditions and converted at indicative rates when you switch currency.
+                  Compare the total cost of ownership of a battery electric truck against a diesel equivalent over the full vehicle life. Select currency, truck type, and use case below. Default values are indicative only, kindly replace with current values from your region.
                 </p>
                 <p className="text-xs text-muted-foreground mt-2 max-w-3xl">
                   <strong>Disclaimer:</strong> Indicative planning tool only. Consult a qualified fleet finance specialist before making capital investment decisions.
@@ -665,171 +665,6 @@ export default function TCOCalculatorPage() {
                   className="w-full bg-background border border-border/50 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
               </div>
             </div>
-          </div>
-
-          {/* ── Optional Considerations ── */}
-          <div className="card mb-6 no-print overflow-hidden">
-            <button type="button" onClick={() => setOptOpen(!optOpen)}
-              className="w-full flex items-center justify-between p-5 text-left hover:bg-muted/20 transition-colors">
-              <div>
-                <p className="text-sm font-semibold">Optional Considerations</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Factors not captured in this model that may significantly affect your real-world TCO
-                </p>
-              </div>
-              {optOpen ? <ChevronUp size={16} className="text-muted-foreground flex-shrink-0" />
-                : <ChevronDown size={16} className="text-muted-foreground flex-shrink-0" />}
-            </button>
-            {optOpen && (
-              <div className="px-5 pb-5 border-t border-border/30">
-                <div className="grid sm:grid-cols-2 gap-x-8 gap-y-4 mt-4 text-sm">
-                  <div>
-                    <p className="font-medium text-foreground mb-1">Charging infrastructure</p>
-                    <p className="text-muted-foreground text-xs leading-relaxed">
-                      Depot charger installation (typically R150k–R500k per charger), grid upgrade costs, and demand charges from the utility are not included. These can materially affect the electric TCO for large fleets.
-                    </p>
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground mb-1">Battery replacement</p>
-                    <p className="text-muted-foreground text-xs leading-relaxed">
-                      Battery packs may need replacement after 8–12 years or 800,000–1,200,000 km depending on chemistry and duty cycle. This cost is not modelled and could be significant.
-                    </p>
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground mb-1">Carbon credits and incentives</p>
-                    <p className="text-muted-foreground text-xs leading-relaxed">
-                      Green freight incentives, carbon tax offsets, and DFI concessional rates are available in some markets and can improve the electric case substantially.
-                    </p>
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground mb-1">Driver training and change management</p>
-                    <p className="text-muted-foreground text-xs leading-relaxed">
-                      Electric truck operation requires driver re-training and route planning changes. GFA offers accredited electric vehicle driver training programmes.
-                    </p>
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground mb-1">Grid reliability and backup power</p>
-                    <p className="text-muted-foreground text-xs leading-relaxed">
-                      In markets with load-shedding or unreliable grid supply, backup power or solar integration may be required to guarantee charging availability, adding capital cost.
-                    </p>
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground mb-1">Payload and range constraints</p>
-                    <p className="text-muted-foreground text-xs leading-relaxed">
-                      Battery weight reduces payload capacity. Electric trucks are currently best suited to routes under 300 km per day. Long-haul trunk routes may not yet be viable without overnight charging infrastructure.
-                    </p>
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground mt-4 pt-4 border-t border-border/20">
-                  TAG can help you model these factors for your specific fleet and route profile.{" "}
-                  <Link href="/partner-with-tag" className="text-primary hover:underline">Talk to TAG →</Link>
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* ── Daily Energy Required Per Truck ── */}
-          <div className="card mb-6 no-print overflow-hidden">
-            <button type="button" onClick={() => setRoutePlannerOpen(!routePlannerOpen)}
-              className="w-full flex items-center justify-between p-5 text-left hover:bg-muted/20 transition-colors">
-              <div>
-                <p className="text-sm font-semibold">Daily Energy Required Per Truck</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Estimate daily energy demand per truck to plan charging infrastructure requirements
-                </p>
-              </div>
-              {routePlannerOpen ? <ChevronUp size={16} className="text-muted-foreground flex-shrink-0" />
-                : <ChevronDown size={16} className="text-muted-foreground flex-shrink-0" />}
-            </button>
-            {routePlannerOpen && (
-              <div className="px-5 pb-5 border-t border-border/30">
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                  {/* Route name */}
-                  <div className="lg:col-span-1">
-                    <label className="text-xs text-muted-foreground block mb-1.5">Route name</label>
-                    <input
-                      type="text"
-                      value={routeName}
-                      onChange={e => setRouteName(e.target.value)}
-                      placeholder="e.g. Johannesburg – Durban"
-                      className="w-full bg-background border border-border/50 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                    />
-                  </div>
-                  {/* Truck type */}
-                  <div className="lg:col-span-1">
-                    <label className="text-xs text-muted-foreground block mb-1.5">Truck type on this route</label>
-                    <input
-                      type="text"
-                      value={routeTruckType}
-                      onChange={e => setRouteTruckType(e.target.value)}
-                      placeholder="e.g. Truck tractor (6×4)"
-                      className="w-full bg-background border border-border/50 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                    />
-                  </div>
-                  {/* Max payload */}
-                  <div>
-                    <label className="text-xs text-muted-foreground block mb-1.5">Max payload (tonnes)</label>
-                    <input
-                      type="number"
-                      value={routeMaxPayload}
-                      min={1} max={60} step={0.5}
-                      onChange={e => setRouteMaxPayload(parseFloat(e.target.value) || 0)}
-                      className="w-full bg-background border border-border/50 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                    />
-                  </div>
-                  {/* km per trip */}
-                  <div>
-                    <label className="text-xs text-muted-foreground block mb-1.5">km per trip</label>
-                    <input
-                      type="number"
-                      value={routeKmPerTrip}
-                      min={1} max={2000} step={10}
-                      onChange={e => setRouteKmPerTrip(parseFloat(e.target.value) || 0)}
-                      className="w-full bg-background border border-border/50 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                    />
-                  </div>
-                  {/* Trips per day */}
-                  <div>
-                    <label className="text-xs text-muted-foreground block mb-1.5">Trips per day</label>
-                    <input
-                      type="number"
-                      value={routeTripsPerDay}
-                      min={1} max={10} step={1}
-                      onChange={e => setRouteTripsPerDay(parseFloat(e.target.value) || 1)}
-                      className="w-full bg-background border border-border/50 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                    />
-                  </div>
-                </div>
-
-                {/* Calculated results */}
-                {routeDailyKm > 0 && (
-                  <div className="mt-5 grid sm:grid-cols-2 gap-4">
-                    <div className="rounded-xl bg-muted/30 border border-border/30 p-4">
-                      <p className="text-xs text-muted-foreground mb-1">Total km per day</p>
-                      <p className="text-2xl font-bold text-foreground">{routeDailyKm.toLocaleString("en-US")}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{routeKmPerTrip} km × {routeTripsPerDay} trip{routeTripsPerDay !== 1 ? "s" : ""}</p>
-                    </div>
-                    <div className="rounded-xl bg-green-500/10 border border-green-500/20 p-4">
-                      <p className="text-xs text-muted-foreground mb-1">Daily energy required per truck</p>
-                      <p className="text-2xl font-bold text-green-400">{routeDailyKwh.toLocaleString("en-US", { maximumFractionDigits: 0 })} kWh</p>
-                      <p className="text-xs text-muted-foreground mt-1">At {inputs.electricEnergyConsumption} kWh/100km (from your electric inputs above)</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Planning note */}
-                <div className="mt-4 rounded-lg bg-primary/5 border border-primary/20 p-4">
-                  <p className="text-xs font-medium text-foreground mb-1">Infrastructure planning note</p>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    This is the energy required per truck per day on this route. Consider the number of trucks in your fleet and your rate of deployment of electric trucks to estimate energy demand growth and charging infrastructure requirements over time. Depot charger sizing, grid connection capacity, and demand charge tariffs should all be reviewed with your utility and an infrastructure specialist before committing to a deployment plan.
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    TAG can assist with fleet electrification planning.{" "}
-                    <Link href="/partner-with-tag" className="text-primary hover:underline">Talk to TAG →</Link>
-                  </p>
-                </div>
-              </div>
-            )}
           </div>
 
           <div className="grid lg:grid-cols-2 gap-8">
@@ -1022,6 +857,172 @@ export default function TCOCalculatorPage() {
               </div>
             </div>
           </div>
+
+          {/* ── Daily Energy Required Per Truck ── */}
+          <div className="card mt-8 mb-6 no-print overflow-hidden">
+            <button type="button" onClick={() => setRoutePlannerOpen(!routePlannerOpen)}
+              className="w-full flex items-center justify-between p-5 text-left hover:bg-muted/20 transition-colors">
+              <div>
+                <p className="text-sm font-semibold">Daily Energy Required Per Truck</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Estimate daily energy demand per truck to plan charging infrastructure requirements
+                </p>
+              </div>
+              {routePlannerOpen ? <ChevronUp size={16} className="text-muted-foreground flex-shrink-0" />
+                : <ChevronDown size={16} className="text-muted-foreground flex-shrink-0" />}
+            </button>
+            {routePlannerOpen && (
+              <div className="px-5 pb-5 border-t border-border/30">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                  {/* Route name */}
+                  <div className="lg:col-span-1">
+                    <label className="text-xs text-muted-foreground block mb-1.5">Route name</label>
+                    <input
+                      type="text"
+                      value={routeName}
+                      onChange={e => setRouteName(e.target.value)}
+                      placeholder="e.g. Johannesburg – Durban"
+                      className="w-full bg-background border border-border/50 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                  </div>
+                  {/* Truck type */}
+                  <div className="lg:col-span-1">
+                    <label className="text-xs text-muted-foreground block mb-1.5">Truck type on this route</label>
+                    <input
+                      type="text"
+                      value={routeTruckType}
+                      onChange={e => setRouteTruckType(e.target.value)}
+                      placeholder="e.g. Truck tractor (6×4)"
+                      className="w-full bg-background border border-border/50 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                  </div>
+                  {/* Max payload */}
+                  <div>
+                    <label className="text-xs text-muted-foreground block mb-1.5">Max payload (tonnes)</label>
+                    <input
+                      type="number"
+                      value={routeMaxPayload}
+                      min={1} max={60} step={0.5}
+                      onChange={e => setRouteMaxPayload(parseFloat(e.target.value) || 0)}
+                      className="w-full bg-background border border-border/50 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                  </div>
+                  {/* km per trip */}
+                  <div>
+                    <label className="text-xs text-muted-foreground block mb-1.5">km per trip</label>
+                    <input
+                      type="number"
+                      value={routeKmPerTrip}
+                      min={1} max={2000} step={10}
+                      onChange={e => setRouteKmPerTrip(parseFloat(e.target.value) || 0)}
+                      className="w-full bg-background border border-border/50 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                  </div>
+                  {/* Trips per day */}
+                  <div>
+                    <label className="text-xs text-muted-foreground block mb-1.5">Trips per day</label>
+                    <input
+                      type="number"
+                      value={routeTripsPerDay}
+                      min={1} max={10} step={1}
+                      onChange={e => setRouteTripsPerDay(parseFloat(e.target.value) || 1)}
+                      className="w-full bg-background border border-border/50 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                  </div>
+                </div>
+
+                {/* Calculated results */}
+                {routeDailyKm > 0 && (
+                  <div className="mt-5 grid sm:grid-cols-2 gap-4">
+                    <div className="rounded-xl bg-muted/30 border border-border/30 p-4">
+                      <p className="text-xs text-muted-foreground mb-1">Total km per day</p>
+                      <p className="text-2xl font-bold text-foreground">{routeDailyKm.toLocaleString("en-US")}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{routeKmPerTrip} km × {routeTripsPerDay} trip{routeTripsPerDay !== 1 ? "s" : ""}</p>
+                    </div>
+                    <div className="rounded-xl bg-green-500/10 border border-green-500/20 p-4">
+                      <p className="text-xs text-muted-foreground mb-1">Daily energy required per truck</p>
+                      <p className="text-2xl font-bold text-green-400">{routeDailyKwh.toLocaleString("en-US", { maximumFractionDigits: 0 })} kWh</p>
+                      <p className="text-xs text-muted-foreground mt-1">At {inputs.electricEnergyConsumption} kWh/100km (from your electric inputs above)</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Planning note */}
+                <div className="mt-4 rounded-lg bg-primary/5 border border-primary/20 p-4">
+                  <p className="text-xs font-medium text-foreground mb-1">Infrastructure planning note</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    This is the energy required per truck per day on this route. Consider the number of trucks in your fleet and your rate of deployment of electric trucks to estimate energy demand growth and charging infrastructure requirements over time. Depot charger sizing, grid connection capacity, and demand charge tariffs should all be reviewed with your utility and an infrastructure specialist before committing to a deployment plan.
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    TAG can assist with fleet electrification planning.{" "}
+                    <Link href="/partner-with-tag" className="text-primary hover:underline">Talk to TAG →</Link>
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ── Optional Considerations ── */}
+          <div className="card mb-6 no-print overflow-hidden">
+            <button type="button" onClick={() => setOptOpen(!optOpen)}
+              className="w-full flex items-center justify-between p-5 text-left hover:bg-muted/20 transition-colors">
+              <div>
+                <p className="text-sm font-semibold">Optional Considerations</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Factors not captured in this model that may significantly affect your real-world TCO
+                </p>
+              </div>
+              {optOpen ? <ChevronUp size={16} className="text-muted-foreground flex-shrink-0" />
+                : <ChevronDown size={16} className="text-muted-foreground flex-shrink-0" />}
+            </button>
+            {optOpen && (
+              <div className="px-5 pb-5 border-t border-border/30">
+                <div className="grid sm:grid-cols-2 gap-x-8 gap-y-4 mt-4 text-sm">
+                  <div>
+                    <p className="font-medium text-foreground mb-1">Charging infrastructure</p>
+                    <p className="text-muted-foreground text-xs leading-relaxed">
+                      Depot charger installation (typically R150k–R500k per charger), grid upgrade costs, and demand charges from the utility are not included. These can materially affect the electric TCO for large fleets.
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground mb-1">Battery replacement</p>
+                    <p className="text-muted-foreground text-xs leading-relaxed">
+                      Battery packs may need replacement after 8–12 years or 800,000–1,200,000 km depending on chemistry and duty cycle. This cost is not modelled and could be significant.
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground mb-1">Carbon credits and incentives</p>
+                    <p className="text-muted-foreground text-xs leading-relaxed">
+                      Green freight incentives, carbon tax offsets, and DFI concessional rates are available in some markets and can improve the electric case substantially.
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground mb-1">Driver training and change management</p>
+                    <p className="text-muted-foreground text-xs leading-relaxed">
+                      Electric truck operation requires driver re-training and route planning changes. GFA offers accredited electric vehicle driver training programmes.
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground mb-1">Grid reliability and backup power</p>
+                    <p className="text-muted-foreground text-xs leading-relaxed">
+                      In markets with load-shedding or unreliable grid supply, backup power or solar integration may be required to guarantee charging availability, adding capital cost.
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground mb-1">Payload and range constraints</p>
+                    <p className="text-muted-foreground text-xs leading-relaxed">
+                      Battery weight reduces payload capacity. Electric trucks are currently best suited to routes under 300 km per day. Long-haul trunk routes may not yet be viable without overnight charging infrastructure.
+                    </p>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground mt-4 pt-4 border-t border-border/20">
+                  TAG can help you model these factors for your specific fleet and route profile.{" "}
+                  <Link href="/partner-with-tag" className="text-primary hover:underline">Talk to TAG →</Link>
+                </p>
+              </div>
+            )}
+          </div>
+
         </div>
       </div>
     </>

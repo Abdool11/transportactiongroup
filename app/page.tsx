@@ -125,7 +125,7 @@ export default async function HomePage() {
       {/* ═══════════════════════════════════════════════════════════════
           SECTION 1 — HERO
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative min-h-screen flex items-center pt-6 overflow-hidden">
+      <section className="relative min-h-[75vh] flex items-center pt-6 overflow-hidden">
         {/* Background radial glow */}
         <div className="absolute inset-0 pointer-events-none">
           <div
@@ -150,26 +150,18 @@ export default async function HomePage() {
         <div className="container relative z-10 py-12">
           <div className="max-w-4xl">
             {/* Headline */}
-            <h1 className="text-balance mb-6 text-foreground">
-              {HERO.headline.split("green freight transformation").map((part, i, arr) =>
-                i < arr.length - 1 ? (
-                  <span key={i}>
-                    {part}
-                    <span className="gradient-text">green freight transformation</span>
-                  </span>
-                ) : (
-                  <span key={i}>{part}</span>
-                )
-              )}
+            <h1 className="mb-6 text-foreground">
+              <span className="block text-foreground">Creating the enabling environment for</span>
+              <span className="block gradient-text">Green Freight Transformation</span>
             </h1>
 
             {/* Supporting text */}
-            <p className="text-lg text-muted-foreground leading-relaxed max-w-2xl mb-10">
+            <p className="text-lg text-muted-foreground leading-relaxed max-w-2xl mb-8">
               {HERO.supporting}
             </p>
 
             {/* CTAs */}
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-4 mb-4">
               <Link href={HERO.ctaPrimary.href} className="btn-primary">
                 {HERO.ctaPrimary.label}
                 <ArrowRight size={16} />
@@ -331,7 +323,6 @@ export default async function HomePage() {
 
             {/* Electric Truck Action Plan */}
             <div className="card group">
-              <span className="badge badge-teal mb-4">Electric Truck</span>
               <h3 className="mb-3">Electric Truck Action Plan</h3>
               <p className="text-muted-foreground text-sm leading-relaxed mb-6">
                 A strategic roadmap to support zero-emission truck transition — addressing

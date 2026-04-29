@@ -6,8 +6,8 @@ export const dynamic = "force-dynamic";
 
 
 export const metadata: Metadata = {
-  title: "Electric Trucks in South Africa | Transport Action Group",
-  description: "A practical guide to battery electric truck technology, readiness, and transition planning for South African road freight operators.",
+  title: "Zero-Emission Trucks in Africa | Transport Action Group",
+  description: "A practical guide to battery electric truck technology, readiness, and transition planning for African road freight operators.",
 };
 
 const KEY_VARIABLES = [
@@ -57,9 +57,9 @@ export default function ElectricTruckPage() {
 
         {/* Header */}
         <div className="mb-16">
-          <h1 className="mb-6">Zero-emission trucks in South Africa</h1>
+          <h1 className="mb-6">Zero-emission trucks in Africa</h1>
           <p className="text-muted-foreground leading-relaxed text-lg max-w-3xl">
-            Battery electric trucks are commercially available, increasingly cost-competitive, and being deployed by leading operators globally. Here is what South African fleet operators need to know.
+            Battery electric trucks are commercially available, increasingly cost-competitive, and being deployed by leading operators globally. Here is what African fleet operators need to know.
           </p>
         </div>
 

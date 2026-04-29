@@ -9,12 +9,9 @@ export const SITE_TAGLINE = "Creating the enabling environment for green freight
 export const SITE_DESCRIPTION =
   "Transport Action Group helps shape green freight transition through implementable Green Freight Action Plans designed in response to a Green Freight Strategy, strategic interventions, ecosystem alignment, and partner mobilisation — turning industry ambition into practical implementation momentum.";
 
-// ─── Logo URLs (CDN) ──────────────────────────────────────────────────────────
-// TODO: Asif — replace with final production CDN URLs if domain changes
-export const LOGO_HIRES_URL =
-  "https://d2xsxph8kpxj0f.cloudfront.net/310419663029242115/7hkpwuMvcYXKBS2WLLYdHP/TAGlogohires_5f382195.webp";
-export const LOGO_WITH_TEXT_URL =
-  "https://d2xsxph8kpxj0f.cloudfront.net/310419663029242115/7hkpwuMvcYXKBS2WLLYdHP/TAGlogowithtext_f6360046.webp";
+// ─── Logo URLs ────────────────────────────────────────────────────────────────
+export const LOGO_HIRES_URL = "/tag-logo.webp";
+export const LOGO_WITH_TEXT_URL = "/tag-logo.webp";
 
 // ─── External URLs ────────────────────────────────────────────────────────────
 // All external URLs must come from process.env in production.

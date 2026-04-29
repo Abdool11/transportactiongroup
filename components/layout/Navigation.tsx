@@ -58,7 +58,7 @@ export function Navigation() {
             <Link href="/contact" className="btn-ghost text-sm">
               Contact
             </Link>
-            <Link href={NAV_CTA.href} className="btn-primary text-sm">
+            <Link href={NAV_CTA.href} className="btn-primary text-xs px-3 py-1.5">
               {NAV_CTA.label}
             </Link>
           </div>
