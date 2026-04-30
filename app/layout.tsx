@@ -33,6 +33,9 @@ export const metadata: Metadata = {
     "Abdool Kamdar",
     "green freight advisory",
     "DFI green freight",
+    "electric truck Africa",
+    "green freight Africa",
+    "sustainable road freight",
   ],
   authors: [{ name: "Transport Action Group", url: "https://www.transportactiongroup.com" }],
   creator: "Transport Action Group",
@@ -77,6 +80,33 @@ export const metadata: Metadata = {
   },
 };
 
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Transport Action Group",
+  alternateName: "TAG",
+  url: "https://www.transportactiongroup.com",
+  logo: "https://www.transportactiongroup.com/tag-logo.webp",
+  description:
+    "Transport Action Group creates the enabling environment for green freight transformation in South Africa and Africa through action plans, strategic interventions, ecosystem alignment, and partner mobilisation.",
+  address: {
+    "@type": "PostalAddress",
+    addressCountry: "ZA",
+  },
+  sameAs: [
+    "https://www.linkedin.com/company/transport-action-group",
+  ],
+};
+
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "Transport Action Group",
+  url: "https://www.transportactiongroup.com",
+  description:
+    "The enabling environment platform for green freight transformation in South Africa and Africa.",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -87,6 +117,14 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+        />
       </head>
       <body className="min-h-screen bg-background text-foreground antialiased">
         <Navigation />
