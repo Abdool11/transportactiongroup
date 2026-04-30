@@ -116,6 +116,46 @@ The app is packaged as a standalone tar.gz including `server.js`, `pm2.config.js
 
 ---
 
+## Deploying Updates
+
+When new changes are pushed to `main`, Asif deploys them to the live server with these four commands:
+
+```bash
+# 1. Pull the latest code from GitHub
+git pull origin main
+
+# 2. Install any new dependencies (safe to run even if nothing changed)
+npm install
+
+# 3. Rebuild the application
+npm run build
+
+# 4. Restart the app (PM2 picks up the new build automatically)
+pm2 restart tag-app
+```
+
+The site will be live with the new changes within 1–2 minutes of running `pm2 restart`.
+
+> **Note:** After `npm run build`, copy the new static assets into the standalone directory before restarting:
+> ```bash
+> cp -r .next/static .next/standalone/.next/static
+> cp -r public .next/standalone/public
+> pm2 restart tag-app
+> ```
+
+---
+
+## Recent Changes
+
+| Date | Branch | Summary |
+| :--- | :--- | :--- |
+| 2026-04-29 | `feature/ui-updates-homepage-tco-electric-truck` | Hero text split into two lines, bragging line brought into view, Electric Truck badge removed, Electric Trucks page renamed to Africa, TCO title/subtitle updated, TCO layout reordered (inputs → Daily Energy → Optional Considerations), default values synced, new logo, Partner with TAG button resized |
+| 2026-04-29 | `fix/nginx-static-assets-and-setup-docs` | Fixed nginx.conf to include `/_next/static/` block (critical for CSS serving), added FIRST-TIME-SETUP.md |
+| 2026-04-29 | `docs` | Added README, CONTRIBUTING guide, PR template |
+| 2026-04-29 | `initial` | Initial commit — TAG v4 production-ready source code |
+
+---
+
 ## Admin Access
 
 Admin backend at `/admin/login`. Credentials are set via `ADMIN_EMAIL` and `ADMIN_PASSWORD` environment variables — never committed to this repository.
