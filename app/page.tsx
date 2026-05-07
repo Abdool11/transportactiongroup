@@ -125,7 +125,7 @@ export default async function HomePage() {
       {/* ═══════════════════════════════════════════════════════════════
           SECTION 1 — HERO
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative min-h-[75vh] flex items-center pt-6 overflow-hidden">
+      <section className="relative min-h-[75vh] flex items-center pt-28 overflow-hidden">
         {/* Background radial glow */}
         <div className="absolute inset-0 pointer-events-none">
           <div
