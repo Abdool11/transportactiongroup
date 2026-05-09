@@ -471,6 +471,7 @@ export default function TCOCalculatorPage() {
   const [inputs, setInputs] = useState<Inputs>(ZAR_DEFAULTS);
   const [optOpen, setOptOpen] = useState(false);
   const [loginModal, setLoginModal] = useState<null | "csv" | "pdf">(null);
+  const [fleetSize, setFleetSize] = useState(1);
 
   // ─── Route Energy Planner state ───────────────────────────────────────────
   const [routePlannerOpen, setRoutePlannerOpen] = useState(false);
@@ -525,6 +526,11 @@ export default function TCOCalculatorPage() {
     return `${currency.symbol}${n.toFixed(0)}`;
   };
   const fmtCpm = (n: number) => `${currency.symbol} ${n.toFixed(2)}/km`;
+
+  // ─── CO₂ savings (diesel litres consumed × 3.48 kg CO₂e/L) ─────────────────
+  const dieselTotalLitres = (inputs.dieselMonthlyKm * 12 * inputs.dieselVehicleLifeYears / 100) * inputs.dieselFuelConsumption;
+  const co2SavedKg = dieselTotalLitres * 3.48; // kg CO₂e
+  const co2SavedMt = co2SavedKg / 1_000_000;   // megatonnes
 
   const chartData = result.years.map(r => ({
     year: `Y${r.year}`,
@@ -763,6 +769,29 @@ export default function TCOCalculatorPage() {
               {/* Summary */}
               <div className={`card p-6 border-l-2 ${electricIsCheaper ? "border-l-green-500" : "border-l-amber-500"}`}>
                 <h2 className="text-base font-semibold mb-4">TCO Summary</h2>
+
+                {/* Fleet size stepper */}
+                <div className="flex items-center justify-between mb-4 pb-4 border-b border-border/30">
+                  <div>
+                    <p className="text-sm font-medium">Number of trucks in fleet</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Scales cost savings and CO₂ emissions saved</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button type="button"
+                      onClick={() => setFleetSize(f => Math.max(1, f - 1))}
+                      className="w-8 h-8 rounded-lg border border-border/50 flex items-center justify-center text-sm hover:bg-muted/40 transition-colors font-bold">
+                      −
+                    </button>
+                    <span className="w-8 text-center font-semibold text-sm">{fleetSize}</span>
+                    <button type="button"
+                      onClick={() => setFleetSize(f => Math.min(500, f + 1))}
+                      className="w-8 h-8 rounded-lg border border-border/50 flex items-center justify-center text-sm hover:bg-muted/40 transition-colors font-bold">
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                {/* Per-truck TCO boxes */}
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div className="bg-muted/30 rounded-xl p-4">
                     <p className="text-xs text-muted-foreground mb-1">Diesel TCO</p>
@@ -775,11 +804,13 @@ export default function TCOCalculatorPage() {
                     <p className="text-xs text-muted-foreground mt-1">{fmtCpm(result.electricCpm)}</p>
                   </div>
                 </div>
-                <div className={`rounded-xl p-4 ${electricIsCheaper ? "bg-green-500/10 border border-green-500/20" : "bg-amber-500/10 border border-amber-500/20"}`}>
+
+                {/* Saving banner */}
+                <div className={`rounded-xl p-4 mb-4 ${electricIsCheaper ? "bg-green-500/10 border border-green-500/20" : "bg-amber-500/10 border border-amber-500/20"}`}>
                   {electricIsCheaper ? (
                     <>
                       <p className="text-sm font-semibold text-green-400">
-                        Electric saves {fmtShort(result.totalSaving)} over the comparison period
+                        Electric saves {fmtShort(result.totalSaving * fleetSize)} over the comparison period{fleetSize > 1 ? ` (${fleetSize} trucks)` : ""}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
                         {result.breakEvenYear
@@ -790,13 +821,30 @@ export default function TCOCalculatorPage() {
                   ) : (
                     <>
                       <p className="text-sm font-semibold text-amber-400">
-                        Diesel is {fmtShort(Math.abs(result.totalSaving))} cheaper under these inputs
+                        Diesel is {fmtShort(Math.abs(result.totalSaving) * fleetSize)} cheaper under these inputs{fleetSize > 1 ? ` (${fleetSize} trucks)` : ""}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
                         Try increasing monthly km, diesel escalation %, or reducing electricity price.
                       </p>
                     </>
                   )}
+                </div>
+
+                {/* Environmental impact */}
+                <div className="rounded-xl p-4 bg-muted/20 border border-border/30">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Environmental impact</p>
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-green-400 text-sm">🌿</span>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Tailpipe CO₂ saved (lifetime{fleetSize > 1 ? `, ${fleetSize} trucks` : ", per truck"})</p>
+                      <p className="text-lg font-bold text-green-400 mt-0.5">
+                        {(co2SavedMt * fleetSize).toFixed(2)} Mt CO₂e
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Diesel fuel consumed × 3.48 kg CO₂e per litre</p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
