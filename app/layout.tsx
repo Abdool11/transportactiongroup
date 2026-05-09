@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Navigation } from "@/components/layout/NavigationWrapper";
 import { Footer } from "@/components/layout/Footer";
+import { LogoIntro } from "@/components/layout/LogoIntro";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -131,6 +132,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen bg-background text-foreground antialiased">
+        <LogoIntro logoSrc="/tag-logo.png" />
         <Navigation />
         <main>{children}</main>
         <Footer />
