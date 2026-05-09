@@ -10,8 +10,8 @@ export const SITE_DESCRIPTION =
   "Transport Action Group helps shape green freight transition through implementable Green Freight Action Plans designed in response to a Green Freight Strategy, strategic interventions, ecosystem alignment, and partner mobilisation — turning industry ambition into practical implementation momentum.";
 
 // ─── Logo URLs ────────────────────────────────────────────────────────────────
-export const LOGO_HIRES_URL = "/tag-logo.webp";
-export const LOGO_WITH_TEXT_URL = "/tag-logo.webp";
+export const LOGO_HIRES_URL = "/tag-logo.png";
+export const LOGO_WITH_TEXT_URL = "/tag-logo.png";
 
 // ─── External URLs ────────────────────────────────────────────────────────────
 // All external URLs must come from process.env in production.

@@ -86,7 +86,7 @@ const organizationJsonLd = {
   name: "Transport Action Group",
   alternateName: "TAG",
   url: "https://www.transportactiongroup.com",
-  logo: "https://www.transportactiongroup.com/tag-logo.webp",
+  logo: "https://www.transportactiongroup.com/tag-logo.png",
   description:
     "Transport Action Group creates the enabling environment for green freight transformation in South Africa and Africa through action plans, strategic interventions, ecosystem alignment, and partner mobilisation.",
   address: {
