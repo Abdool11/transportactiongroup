@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Info, Download, FileText, ChevronDown, ChevronUp, X } from "lucide-react";
 import {
@@ -49,6 +49,17 @@ interface YearResult {
   electricCumulative: number;
   saving: number;
 }
+
+// ─── Country → Currency mapping (geo-IP auto-detection) ─────────────────────
+const COUNTRY_CURRENCY: Record<string, string> = {
+  ZA: "ZAR",
+  KE: "KES", TZ: "TZS", UG: "UGX", RW: "RWF", BI: "BIF",
+  ZM: "ZMW", MW: "MWK", MZ: "MZN", ET: "ETB",
+  // Euro-zone
+  DE: "EUR", FR: "EUR", NL: "EUR", BE: "EUR", AT: "EUR", ES: "EUR",
+  PT: "EUR", IT: "EUR", IE: "EUR", FI: "EUR", GR: "EUR", LU: "EUR",
+  SK: "EUR", SI: "EUR", EE: "EUR", LV: "EUR", LT: "EUR", CY: "EUR", MT: "EUR",
+};
 
 // ─── Currencies ───────────────────────────────────────────────────────────────
 const CURRENCIES = [
@@ -478,6 +489,22 @@ export default function TCOCalculatorPage() {
 
   const set = (key: keyof Inputs) => (v: number | boolean) =>
     setInputs(prev => ({ ...prev, [key]: v }));
+
+  // ─── Geo-IP currency auto-detection (runs once on mount) ──────────────────
+  useEffect(() => {
+    fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(4000) })
+      .then(r => r.json())
+      .then(data => {
+        const detected = COUNTRY_CURRENCY[data.country_code];
+        if (detected && detected !== "ZAR") {
+          // Only auto-switch if we detected a non-default currency
+          const newCurrency = getCurrency(detected);
+          setInputs(convertDefaults(ZAR_DEFAULTS, newCurrency.rate));
+          setCurrencyCode(detected);
+        }
+      })
+      .catch(() => { /* silently fall back to ZAR default */ });
+  }, []);
 
   const handleCurrencyChange = (code: string) => {
     const newCurrency = getCurrency(code);
