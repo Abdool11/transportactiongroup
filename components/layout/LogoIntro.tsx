@@ -62,109 +62,120 @@ export function LogoIntro({ logoSrc }: { logoSrc: string }) {
   const animFrameRef = useRef<number>(0);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
     // Only show once per session
     if (sessionStorage.getItem("tag_intro_shown")) return;
     sessionStorage.setItem("tag_intro_shown", "1");
     setVisible(true);
+  }, []);
+
+  useEffect(() => {
+    if (!visible) return;
 
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let particles: Particle[] = [];
-    let startTime: number | null = null;
-
-    function resize() {
-      if (!canvas) return;
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    }
-    resize();
-    window.addEventListener("resize", resize);
-
-    function initParticles() {
-      if (!canvas) return;
-      particles = [];
-      const cx = canvas.width / 2;
-      const cy = canvas.height / 2;
-      for (let i = 0; i < 220; i++) particles.push(spawnParticle(cx, cy));
-    }
-
-    function drawFrame(elapsed: number) {
-      if (!canvas || !ctx) return;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      const cx = canvas.width / 2;
-      const cy = canvas.height / 2;
-      const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, 320);
-      grd.addColorStop(0, "rgba(34,197,94,0.14)");
-      grd.addColorStop(0.45, "rgba(59,130,246,0.07)");
-      grd.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.fillStyle = grd;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      particles.forEach((p) => {
-        p.trail.push({ x: p.x, y: p.y });
-        if (p.trail.length > 7) p.trail.shift();
-
-        if (p.trail.length > 1) {
-          ctx.beginPath();
-          ctx.moveTo(p.trail[0].x, p.trail[0].y);
-          for (let i = 1; i < p.trail.length; i++)
-            ctx.lineTo(p.trail[i].x, p.trail[i].y);
-          ctx.strokeStyle = `${p.colour}${(p.life * 0.35).toFixed(2)})`;
-          ctx.lineWidth = p.size * 0.55;
-          ctx.stroke();
-        }
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = `${p.colour}${p.life.toFixed(2)})`;
-        ctx.fill();
-
-        p.x += p.vx;
-        p.y += p.vy;
-        p.vx *= 0.99;
-        p.vy *= 0.99;
-        p.life -= p.decay;
-      });
-
-      particles = particles.filter((p) => p.life > 0);
-
-      if (elapsed < 700 && particles.length < 120 && canvas) {
-        const cx2 = canvas.width / 2;
-        const cy2 = canvas.height / 2;
-        for (let i = 0; i < 4; i++) particles.push(spawnParticle(cx2, cy2));
-      }
-    }
-
-    function animLoop(timestamp: number) {
-      if (!startTime) startTime = timestamp;
-      const elapsed = timestamp - startTime;
-      drawFrame(elapsed);
-      if (elapsed < 2000) {
-        animFrameRef.current = requestAnimationFrame(animLoop);
-      } else {
-        ctx?.clearRect(0, 0, canvas?.width ?? 0, canvas?.height ?? 0);
-      }
-    }
-
-    initParticles();
-    animFrameRef.current = requestAnimationFrame(animLoop);
+    const ctx = canvas?.getContext("2d");
 
     // Trigger exit animation at 0.85s
-    const exitTimer = setTimeout(() => setExiting(true), 850);
+    const exitTimer = window.setTimeout(() => setExiting(true), 850);
     // Remove from DOM at 1.6s
-    const removeTimer = setTimeout(() => setVisible(false), 1600);
+    const removeTimer = window.setTimeout(() => setVisible(false), 1600);
+
+    if (canvas && ctx) {
+      let particles: Particle[] = [];
+      let startTime: number | null = null;
+
+      function resize() {
+        if (!canvas) return;
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      resize();
+      window.addEventListener("resize", resize);
+
+      function initParticles() {
+        if (!canvas) return;
+        particles = [];
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        for (let i = 0; i < 220; i++) particles.push(spawnParticle(cx, cy));
+      }
+
+      function drawFrame(elapsed: number) {
+        if (!canvas || !ctx) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, 320);
+        grd.addColorStop(0, "rgba(34,197,94,0.14)");
+        grd.addColorStop(0.45, "rgba(59,130,246,0.07)");
+        grd.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = grd;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        particles.forEach((p) => {
+          p.trail.push({ x: p.x, y: p.y });
+          if (p.trail.length > 7) p.trail.shift();
+
+          if (p.trail.length > 1) {
+            ctx.beginPath();
+            ctx.moveTo(p.trail[0].x, p.trail[0].y);
+            for (let i = 1; i < p.trail.length; i++)
+              ctx.lineTo(p.trail[i].x, p.trail[i].y);
+            ctx.strokeStyle = `${p.colour}${(p.life * 0.35).toFixed(2)})`;
+            ctx.lineWidth = p.size * 0.55;
+            ctx.stroke();
+          }
+
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fillStyle = `${p.colour}${p.life.toFixed(2)})`;
+          ctx.fill();
+
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vx *= 0.99;
+          p.vy *= 0.99;
+          p.life -= p.decay;
+        });
+
+        particles = particles.filter((p) => p.life > 0);
+
+        if (elapsed < 700 && particles.length < 120 && canvas) {
+          const cx2 = canvas.width / 2;
+          const cy2 = canvas.height / 2;
+          for (let i = 0; i < 4; i++) particles.push(spawnParticle(cx2, cy2));
+        }
+      }
+
+      function animLoop(timestamp: number) {
+        if (!startTime) startTime = timestamp;
+        const elapsed = timestamp - startTime;
+        drawFrame(elapsed);
+        if (elapsed < 2000) {
+          animFrameRef.current = requestAnimationFrame(animLoop);
+        } else {
+          ctx?.clearRect(0, 0, canvas?.width ?? 0, canvas?.height ?? 0);
+        }
+      }
+
+      initParticles();
+      animFrameRef.current = requestAnimationFrame(animLoop);
+
+      return () => {
+        window.removeEventListener("resize", resize);
+      };
+    }
 
     return () => {
-      window.removeEventListener("resize", resize);
-      cancelAnimationFrame(animFrameRef.current);
-      clearTimeout(exitTimer);
-      clearTimeout(removeTimer);
+      window.clearTimeout(exitTimer);
+      window.clearTimeout(removeTimer);
+      if (animFrameRef.current) {
+        window.cancelAnimationFrame(animFrameRef.current);
+      }
     };
-  }, []);
+  }, [visible]);
 
   if (!visible) return null;
 
