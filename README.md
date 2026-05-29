@@ -4,6 +4,14 @@
 
 TAG is a national advisory and implementation platform for green freight and electric truck action plans. This repository contains the full source code for the TAG website.
 
+Key platform capabilities include:
+- **TCO Calculator with Mixing Desk Optimizer** — interactive total cost of ownership calculator comparing Diesel vs Electric trucks; cumulative cost graphs at the top; dual-sided "mixing desk" sliders (independent Diesel and Electric parameters) in the middle; TCO summary card at the bottom; currency switcher with geo-IP detection; CO₂ savings metric; fleet size multiplier
+- **TAG Academy** — training programme listings and enrolment links connected to the GFA platform
+- **Green Freight Resource Hub** — publications, case studies, and policy documents
+- **Ecosystem Partner Directory** — searchable directory of ecosystem partners
+- **Partner Registration** — online partner application form
+- **Admin Dashboard** — content management for partners, publications, and site settings
+
 ---
 
 ## Technology Stack
@@ -149,10 +157,21 @@ The site will be live with the new changes within 1–2 minutes of running `pm2 
 
 | Date | Branch | Summary |
 | :--- | :--- | :--- |
+| 2026-05-29 | `feature/tco-optimizer-v2` | TCO Optimizer mixing desk: cumulative cost graphs moved to top; dual-sided independent sliders for Diesel and Electric (monthly km, vehicle life, vehicle price, finance rate, fuel/electricity price); TCO summary card moved to bottom; second bar chart showing annual saving per year |
 | 2026-04-29 | `feature/ui-updates-homepage-tco-electric-truck` | Hero text split into two lines, bragging line brought into view, Electric Truck badge removed, Electric Trucks page renamed to Africa, TCO title/subtitle updated, TCO layout reordered (inputs → Daily Energy → Optional Considerations), default values synced, new logo, Partner with TAG button resized |
 | 2026-04-29 | `fix/nginx-static-assets-and-setup-docs` | Fixed nginx.conf to include `/_next/static/` block (critical for CSS serving), added FIRST-TIME-SETUP.md |
 | 2026-04-29 | `docs` | Added README, CONTRIBUTING guide, PR template |
 | 2026-04-29 | `initial` | Initial commit — TAG v4 production-ready source code |
+
+---
+
+## Open Feature Branches (Pending Merge to Main)
+
+| Branch | What it contains |
+| :--- | :--- |
+| `feature/tco-optimizer-v2` | TCO Optimizer mixing desk layout with independent Diesel/Electric sliders and dual charts |
+
+> **Asif:** Review and merge this branch into `main` when ready to deploy the new TCO page.
 
 ---
 
