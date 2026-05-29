@@ -17,8 +17,9 @@ const FEATURES = [
   { icon: TrendingUp, title: "Performance-linked outcomes", body: "GFA programmes are designed around measurable business outcomes — fuel efficiency, safety performance, compliance, and emissions reduction — not just learning completion." },
 ];
 
-// PRICING_STUB: Asif — replace GFA_PRICING_API_URL with the live GFA /api/pricing endpoint
-// e.g. https://greenfreightacademy.co.za/api/pricing
+// Live pricing is fetched from GFA /api/pricing.
+// Set GFA_PRICING_API_URL=https://greenfreightacademy.co.za/api/pricing in the TAG server env.
+// If the env var is not set, the FALLBACK array below is used.
 const GFA_PRICING_API_URL = process.env.GFA_PRICING_API_URL ?? "";
 
 interface Programme {
@@ -30,8 +31,9 @@ interface Programme {
 
 async function fetchProgrammePricing(): Promise<Programme[]> {
   const FALLBACK: Programme[] = [
-    { name: "Professional Truck Driver", audience: "Drivers", type: "Subscription", price: "R35/month" },
-    { name: "Eco-Driver Certification", audience: "Drivers", type: "Subscription", price: "R35/month" },
+    { name: "Professional Truck Driver", audience: "Drivers", type: "Subscription", price: "R75/month" },
+    { name: "Eco-Driver Certification", audience: "Drivers", type: "Subscription", price: "R75/month" },
+    { name: "Electric Truck Driver Programme", audience: "Drivers", type: "Once-off", price: "R1,000" },
     { name: "Introduction to Green Freight", audience: "Management", type: "Once-off", price: "R1,000" },
     { name: "Road Freight Manager", audience: "Management", type: "Once-off", price: "R5,000" },
     { name: "Electric Truck Transformation", audience: "Specialist", type: "Once-off", price: "R5,000" },
@@ -42,6 +44,28 @@ async function fetchProgrammePricing(): Promise<Programme[]> {
     const res = await fetch(GFA_PRICING_API_URL, { next: { revalidate: 300 } });
     if (!res.ok) return FALLBACK;
     const data = await res.json();
+    // GFA API returns { courses: [...] } with price_individual and price_corporate fields
+    // Map to the Programme shape expected by this page
+    if (Array.isArray(data.courses)) {
+      return data.courses.map((c: { name: string; price_individual?: number; price_corporate?: number; description?: string }) => {
+        const price = c.price_individual ?? c.price_corporate ?? 0;
+        const isSubscription = c.description?.toLowerCase().includes("subscription") ||
+          c.name.toLowerCase().includes("truck driver") ||
+          c.name.toLowerCase().includes("eco-driver");
+        const audience = c.name.toLowerCase().includes("manager") || c.name.toLowerCase().includes("management") || c.name.toLowerCase().includes("procurement")
+          ? "Management"
+          : c.name.toLowerCase().includes("specialist") || c.name.toLowerCase().includes("transformation")
+          ? "Specialist"
+          : "Drivers";
+        return {
+          name: c.name,
+          audience,
+          type: isSubscription ? "Subscription" : "Once-off",
+          price: isSubscription ? `R${price}/month` : `R${price.toLocaleString("en-ZA")}`,
+        };
+      });
+    }
+    // Legacy shape fallback
     return Array.isArray(data.programmes) ? data.programmes : FALLBACK;
   } catch {
     return FALLBACK;
