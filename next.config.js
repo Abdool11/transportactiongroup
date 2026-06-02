@@ -17,11 +17,6 @@ const nextConfig = {
       },
     ],
   },
-
-  // Turbopack configuration
-  turbopack: {
-    root: __dirname,
-  },
 };
 
 module.exports = nextConfig;
