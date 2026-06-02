@@ -862,27 +862,41 @@ export default function TCOCalculatorPageClient() {
               </div>
             </div>
 
-            {/* Saving banner */}
-            <div className={`rounded-xl p-4 mb-4 ${electricIsCheaper ? "bg-green-500/10 border border-green-500/20" : "bg-amber-500/10 border border-amber-500/20"}`}>
+            {/* Saving banner — prominent */}
+            <div className={`rounded-2xl p-5 mb-4 ${electricIsCheaper ? "bg-green-500/10 border-2 border-green-500/30" : "bg-amber-500/10 border-2 border-amber-500/30"}`}>
               {electricIsCheaper ? (
                 <>
-                  <p className="text-sm font-semibold text-green-400">
-                    Electric saves {fmtShort(result.totalSaving * fleetSize)} over the comparison period{fleetSize > 1 ? ` (${fleetSize} trucks)` : ""}
+                  <p className="text-xs font-semibold uppercase tracking-widest text-green-400/70 mb-1">Total saving over comparison period</p>
+                  <p className="text-3xl font-extrabold text-green-400 leading-tight">
+                    {fmtShort(result.totalSaving * fleetSize)}
+                    {fleetSize > 1 && <span className="text-base font-normal text-muted-foreground ml-2">({fleetSize} trucks)</span>}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {result.breakEvenYear
-                      ? `Break-even at Year ${result.breakEvenYear} — electric is cheaper from that point forward.`
-                      : "Electric is cheaper from Year 1 under these inputs."}
+                  <p className="text-sm text-green-300/80 mt-1 font-medium">
+                    {fmtShort(result.totalSaving / Math.max(inputs.dieselVehicleLifeYears, inputs.electricVehicleLifeYears))} per truck per year on average
                   </p>
+                  <div className="mt-3 pt-3 border-t border-green-500/20">
+                    <p className="text-xs text-muted-foreground">
+                      {result.breakEvenYear
+                        ? `⚡ Break-even at Year ${result.breakEvenYear} — electric is cheaper from that point forward.`
+                        : "⚡ Electric is cheaper from Year 1 under these inputs."}
+                    </p>
+                  </div>
                 </>
               ) : (
                 <>
-                  <p className="text-sm font-semibold text-amber-400">
-                    Diesel is {fmtShort(Math.abs(result.totalSaving) * fleetSize)} cheaper under these inputs{fleetSize > 1 ? ` (${fleetSize} trucks)` : ""}
+                  <p className="text-xs font-semibold uppercase tracking-widest text-amber-400/70 mb-1">Diesel advantage over comparison period</p>
+                  <p className="text-3xl font-extrabold text-amber-400 leading-tight">
+                    {fmtShort(Math.abs(result.totalSaving) * fleetSize)}
+                    {fleetSize > 1 && <span className="text-base font-normal text-muted-foreground ml-2">({fleetSize} trucks)</span>}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Try increasing monthly km, diesel escalation %, or reducing electricity price.
+                  <p className="text-sm text-amber-300/80 mt-1 font-medium">
+                    {fmtShort(Math.abs(result.totalSaving) / Math.max(inputs.dieselVehicleLifeYears, inputs.electricVehicleLifeYears))} per truck per year on average
                   </p>
+                  <div className="mt-3 pt-3 border-t border-amber-500/20">
+                    <p className="text-xs text-muted-foreground">
+                      Try increasing monthly km, diesel fuel escalation %, or reducing electricity price.
+                    </p>
+                  </div>
                 </>
               )}
             </div>
