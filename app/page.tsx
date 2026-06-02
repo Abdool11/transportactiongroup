@@ -30,9 +30,6 @@ import {
 } from "@/lib/constants";
 import { fetchGfaStats } from "@/components/LiveGfaStats";
 
-export const dynamic = "force-dynamic";
-
-
 export const metadata: Metadata = {
   title: "Transport Action Group | Enabling Green Freight Transformation",
   description:

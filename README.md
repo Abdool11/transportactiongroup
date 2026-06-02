@@ -67,7 +67,7 @@ Site runs at `http://localhost:3000`.
 | `ADMIN_EMAIL` | Yes | Admin login email |
 | `ADMIN_PASSWORD` | Yes | Admin login password |
 | `ADMIN_JWT_SECRET` | Yes | Secret for signing admin JWT tokens |
-| `RESEND_API_KEY` | Yes | Resend API key for contact form emails |
+| `BREVO_API_KEY` | Yes | Brevo API key for contact form emails |
 | `NEXT_PUBLIC_SITE_URL` | Yes | Full URL of this site in production |
 | `NEXT_PUBLIC_GFA_URL` | Yes | Green Freight Academy site URL |
 | `NEXT_PUBLIC_BD_URL` | Yes | BetterDriver site URL |

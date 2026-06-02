@@ -41,7 +41,7 @@ cd tag-v2
 ```bash
 cp .env.local.example .env.local
 nano .env.local
-# Fill in all values (Supabase URL, anon key, service role key, JWT secret, Resend key)
+# Fill in all values (Supabase URL, anon key, service role key, JWT secret, Brevo key)
 # Save and exit: Ctrl+X → Y → Enter
 ```
 

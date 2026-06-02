@@ -81,7 +81,7 @@ Fill in every value in `.env.local`. The required variables are:
 | `ADMIN_PASSWORD` | A strong password for the TAG admin panel |
 | `ADMIN_JWT_SECRET` | A long random string — generate one with: `openssl rand -hex 32` |
 | `NEXT_PUBLIC_SITE_URL` | `https://transportactiongroup.co.za` |
-| `RESEND_API_KEY` | Your Resend.com API key (for contact form emails) |
+| `BREVO_API_KEY` | Your Brevo API key (for contact form emails) |
 
 Save the file with `Ctrl+O`, then `Ctrl+X`.
 
@@ -210,4 +210,4 @@ The Node.js app is not running. Run `pm2 status` and `pm2 logs tag-app` to diagn
 Double-check `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `.env.local`. Restart the app after any `.env.local` change: `pm2 restart tag-app`.
 
 **Contact form or TCO submission not sending emails**
-Check `RESEND_API_KEY` is set correctly in `.env.local`.
+Check `BREVO_API_KEY` is set correctly in `.env.local`.

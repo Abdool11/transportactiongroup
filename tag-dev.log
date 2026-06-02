@@ -1,0 +1,286 @@
+
+> tag-website@1.0.0 dev
+> next dev
+
+   ▲ Next.js 15.3.1
+   - Local:        http://localhost:3000
+   - Network:      http://10.0.0.105:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ⚠ Invalid next.config.js options detected: 
+ ⚠     Unrecognized key(s) in object: 'root' at "turbopack"
+ ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+ ✓ Ready in 8.7s
+ ○ Compiling / ...
+ ✓ Compiled / in 7.1s (828 modules)
+ GET / 200 in 9083ms
+ GET / 200 in 228ms
+ ○ Compiling /contact ...
+ ✓ Compiled /contact in 2.3s (849 modules)
+ GET /contact 200 in 2855ms
+ ✓ Compiled /about in 492ms (862 modules)
+ GET /about 200 in 1456ms
+ ○ Compiling /academy ...
+ ✓ Compiled /academy in 595ms (874 modules)
+ GET /academy 200 in 1953ms
+ ○ Compiling /books ...
+ ✓ Compiled /books in 1409ms (885 modules)
+ GET /books 200 in 1880ms
+ ○ Compiling /ecosystem-partners ...
+ ✓ Compiled /ecosystem-partners in 4.8s (896 modules)
+ GET /ecosystem-partners 200 in 6383ms
+ ○ Compiling /electric-truck ...
+ ✓ Compiled /electric-truck in 668ms (909 modules)
+ GET /electric-truck 200 in 1186ms
+ ○ Compiling /green-freight ...
+ ✓ Compiled /green-freight in 801ms (918 modules)
+ GET /green-freight 200 in 1076ms
+ ○ Compiling /knowledge-hub ...
+ ✓ Compiled /knowledge-hub in 754ms (929 modules)
+ GET /knowledge-hub 200 in 1027ms
+ ○ Compiling /services ...
+ ✓ Compiled /services in 1059ms (940 modules)
+ GET /services 200 in 1698ms
+ ○ Compiling /tco-calculator ...
+ ✓ Compiled /tco-calculator in 3.2s (1910 modules)
+ GET /tco-calculator 200 in 3910ms
+ ○ Compiling /admin/login ...
+ ✓ Compiled /admin/login in 1444ms (2021 modules)
+ GET /admin/login 200 in 2516ms
+ ○ Compiling /admin/enquiries ...
+ ✓ Compiled /admin/enquiries in 1988ms (2076 modules)
+ GET /admin/enquiries 200 in 2637ms
+ ○ Compiling /admin/companies ...
+ ✓ Compiled /admin/companies in 1026ms (2082 modules)
+ GET /admin/companies 200 in 1509ms
+ ○ Compiling /admin/pricing ...
+ ✓ Compiled /admin/pricing in 1296ms (2090 modules)
+ GET /admin/pricing 200 in 1823ms
+ ○ Compiling /admin/stats ...
+ ✓ Compiled /admin/stats in 1590ms (2104 modules)
+ GET /admin/stats 200 in 2206ms
+ ○ Compiling /api/submit-enquiry ...
+ ⨯ ./lib/email.ts:1:1
+Module not found: Can't resolve 'nodemailer'
+> 1 | import nodemailer from "nodemailer";
+    | ^
+  2 |
+  3 | const transporter = nodemailer.createTransport({
+  4 |   host: process.env.BREVO_SMTP_HOST || "smtp-relay.brevo.com",
+
+https://nextjs.org/docs/messages/module-not-found
+
+Import trace for requested module:
+./app/api/submit-enquiry/route.ts
+ ⨯ ./lib/email.ts:1:1
+Module not found: Can't resolve 'nodemailer'
+> 1 | import nodemailer from "nodemailer";
+    | ^
+  2 |
+  3 | const transporter = nodemailer.createTransport({
+  4 |   host: process.env.BREVO_SMTP_HOST || "smtp-relay.brevo.com",
+
+https://nextjs.org/docs/messages/module-not-found
+
+Import trace for requested module:
+./app/api/submit-enquiry/route.ts
+ ⨯ ./lib/email.ts:1:1
+Module not found: Can't resolve 'nodemailer'
+> 1 | import nodemailer from "nodemailer";
+    | ^
+  2 |
+  3 | const transporter = nodemailer.createTransport({
+  4 |   host: process.env.BREVO_SMTP_HOST || "smtp-relay.brevo.com",
+
+https://nextjs.org/docs/messages/module-not-found
+
+Import trace for requested module:
+./app/api/submit-enquiry/route.ts
+ ⨯ ./lib/email.ts:1:1
+Module not found: Can't resolve 'nodemailer'
+> 1 | import nodemailer from "nodemailer";
+    | ^
+  2 |
+  3 | const transporter = nodemailer.createTransport({
+  4 |   host: process.env.BREVO_SMTP_HOST || "smtp-relay.brevo.com",
+
+https://nextjs.org/docs/messages/module-not-found
+
+Import trace for requested module:
+./app/api/submit-enquiry/route.ts
+ POST /api/submit-enquiry 500 in 5955ms
+ POST /api/submit-enquiry 500 in 59ms
+ POST /api/submit-enquiry 500 in 42ms
+ POST /api/submit-enquiry 500 in 32ms
+ POST /api/submit-enquiry 500 in 36ms
+ POST /api/submit-enquiry 500 in 1131ms
+ POST /api/submit-enquiry 500 in 33ms
+ POST /api/submit-enquiry 500 in 40ms
+ POST /api/submit-enquiry 500 in 34ms
+ ⨯ ./lib/email.ts:1:1
+Module not found: Can't resolve 'nodemailer'
+> 1 | import nodemailer from "nodemailer";
+    | ^
+  2 |
+  3 | const transporter = nodemailer.createTransport({
+  4 |   host: process.env.BREVO_SMTP_HOST || "smtp-relay.brevo.com",
+
+https://nextjs.org/docs/messages/module-not-found
+
+Import trace for requested module:
+./app/api/submit-enquiry/route.ts
+ PATCH /api/admin/enquiries 500 in 3329ms
+ PATCH /api/admin/enquiries 500 in 101ms
+ POST /api/submit-enquiry 500 in 635ms
+ POST /api/submit-enquiry 500 in 30ms
+ ⨯ ./lib/email.ts:1:1
+Module not found: Can't resolve 'nodemailer'
+> 1 | import nodemailer from "nodemailer";
+    | ^
+  2 |
+  3 | const transporter = nodemailer.createTransport({
+  4 |   host: process.env.BREVO_SMTP_HOST || "smtp-relay.brevo.com",
+
+https://nextjs.org/docs/messages/module-not-found
+
+Import trace for requested module:
+./app/api/submit-enquiry/route.ts
+(node:2196) ExperimentalWarning: Support for loading ES Module in require() is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ⨯ ./lib/email.ts:1:1
+Module not found: Can't resolve 'nodemailer'
+> 1 | import nodemailer from "nodemailer";
+    | ^
+  2 |
+  3 | const transporter = nodemailer.createTransport({
+  4 |   host: process.env.BREVO_SMTP_HOST || "smtp-relay.brevo.com",
+
+https://nextjs.org/docs/messages/module-not-found
+
+Import trace for requested module:
+./app/api/submit-enquiry/route.ts
+ POST /api/tco-submit 500 in 12356ms
+ POST /api/tco-submit 500 in 28ms
+ POST /api/tco-submit 500 in 30ms
+ POST /api/tco-submit 500 in 35ms
+ POST /api/tco-submit 500 in 38ms
+ POST /api/tco-submit 500 in 29ms
+ POST /api/tco-submit 500 in 34ms
+ POST /api/tco-submit 500 in 769ms
+ ⨯ ./lib/email.ts:1:1
+Module not found: Can't resolve 'nodemailer'
+> 1 | import nodemailer from "nodemailer";
+    | ^
+  2 |
+  3 | const transporter = nodemailer.createTransport({
+  4 |   host: process.env.BREVO_SMTP_HOST || "smtp-relay.brevo.com",
+
+https://nextjs.org/docs/messages/module-not-found
+
+Import trace for requested module:
+./app/api/submit-enquiry/route.ts
+ POST /api/admin/config 500 in 1599ms
+ POST /api/admin/config 500 in 41ms
+ GET /api/admin/config 500 in 34ms
+ GET /api/admin/config 500 in 35ms
+ GET /api/admin/enquiries 500 in 39ms
+ GET /api/admin/enquiries 500 in 40ms
+ ✓ Compiled /api/admin/tco-submissions/[id] in 1774ms (1770 modules)
+ DELETE /api/admin/tco-submissions/fake-id 307 in 5104ms
+ ○ Compiling /api/stats ...
+ ✓ Compiled /api/stats in 1218ms (1772 modules)
+ GET /api/stats 200 in 2224ms
+ GET /api/stats 200 in 258ms
+ GET /api/stats 200 in 246ms
+ ○ Compiling /api/admin/pricing ...
+ ✓ Compiled /api/admin/pricing in 1225ms (1774 modules)
+ POST /api/admin/pricing 401 in 1636ms
+ GET /api/admin/pricing 405 in 13ms
+ ○ Compiling /api/admin/logout ...
+ ✓ Compiled /api/admin/logout in 1489ms (1776 modules)
+ POST /api/admin/logout 307 in 1661ms
+ ○ Compiling /api/submit-enquiry ...
+ ⨯ ./lib/email.ts:1:1
+Module not found: Can't resolve 'nodemailer'
+> 1 | import nodemailer from "nodemailer";
+    | ^
+  2 |
+  3 | const transporter = nodemailer.createTransport({
+  4 |   host: process.env.BREVO_SMTP_HOST || "smtp-relay.brevo.com",
+
+https://nextjs.org/docs/messages/module-not-found
+
+Import trace for requested module:
+./app/api/submit-enquiry/route.ts
+ GET /api/submit-enquiry 500 in 1267ms
+ GET /api/submit-enquiry 500 in 43ms
+ POST /api/submit-enquiry 500 in 39ms
+ POST /api/submit-enquiry 500 in 37ms
+ GET /api/tco-submit 500 in 55ms
+ GET /api/tco-submit 500 in 35ms
+ POST /api/tco-submit 500 in 35ms
+ POST /api/tco-submit 500 in 32ms
+ ✓ Compiled / in 6s (520 modules)
+ GET / 200 in 6985ms
+ ○ Compiling /contact ...
+ ✓ Compiled /contact in 2.5s (534 modules)
+ GET /contact 200 in 3318ms
+ ✓ Compiled /about in 507ms (544 modules)
+ GET /about 200 in 900ms
+ ✓ Compiled /academy in 427ms (554 modules)
+ GET /academy 200 in 1788ms
+ ✓ Compiled /books in 468ms (563 modules)
+ GET /books 200 in 936ms
+ ○ Compiling /ecosystem-partners ...
+ ✓ Compiled /ecosystem-partners in 546ms (572 modules)
+ GET /ecosystem-partners 200 in 1380ms
+ ○ Compiling /electric-truck ...
+ ✓ Compiled /electric-truck in 849ms (583 modules)
+ GET /electric-truck 200 in 1375ms
+ ○ Compiling /green-freight ...
+ ✓ Compiled /green-freight in 1123ms (590 modules)
+ GET /green-freight 200 in 1671ms
+ ○ Compiling /knowledge-hub ...
+ ✓ Compiled /knowledge-hub in 1250ms (599 modules)
+ GET /knowledge-hub 200 in 1820ms
+ ○ Compiling /services ...
+ ✓ Compiled /services in 12.3s (608 modules)
+ GET /services 200 in 14659ms
+ ○ Compiling /tco-calculator ...
+ ✓ Compiled /tco-calculator in 3.6s (1095 modules)
+ GET /tco-calculator 200 in 5852ms
+ ○ Compiling /admin/login ...
+ ✓ Compiled /admin/login in 2s (1190 modules)
+ GET /admin/login 200 in 4498ms
+ ○ Compiling /admin/enquiries ...
+ ✓ Compiled /admin/enquiries in 2.6s (1240 modules)
+ GET /admin/enquiries 200 in 4473ms
+ ○ Compiling /admin/companies ...
+ ✓ Compiled /admin/companies in 863ms (1246 modules)
+ GET /admin/companies 200 in 1522ms
+ ○ Compiling /admin/pricing ...
+ ✓ Compiled /admin/pricing in 1126ms (1252 modules)
+ GET /admin/pricing 200 in 1694ms
+ ○ Compiling /admin/stats ...
+ ✓ Compiled /admin/stats in 1001ms (1261 modules)
+ GET /admin/stats 200 in 1562ms
+ GET / 200 in 4034ms
+ GET /contact 200 in 463ms
+ GET /about 200 in 428ms
+ GET /academy 200 in 866ms
+ GET /books 200 in 435ms
+ GET /ecosystem-partners 200 in 537ms
+ GET /electric-truck 200 in 374ms
+ GET /green-freight 200 in 301ms
+ GET /knowledge-hub 200 in 418ms
+ GET /services 200 in 294ms
+ GET /tco-calculator 200 in 1675ms
+ GET /admin/login 200 in 320ms
+ GET /admin/enquiries 200 in 346ms
+ GET /admin/companies 200 in 287ms
+ GET /admin/pricing 200 in 264ms
+ GET /admin/stats 200 in 273ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 13.7s (506 modules)
+ OPTIONS /api/tabs 404 in 16496ms

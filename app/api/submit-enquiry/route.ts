@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin, getConfigs } from "@/lib/supabase";
-import { Resend } from "resend";
+import { sendEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   try {
@@ -44,10 +44,10 @@ export async function POST(req: NextRequest) {
     const notifyEmail = config.email_enquiry_to || "abdool@transportactiongroup.com";
     const fromName = config.email_from_name || "Transport Action Group";
 
-    if (process.env.RESEND_API_KEY) {
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      await resend.emails.send({
-        from: `${fromName} <notifications@transportactiongroup.com>`,
+    if (process.env.BREVO_SMTP_PASSWORD) {
+      await sendEmail({
+        from: "notifications@transportactiongroup.com",
+        fromName,
         to: notifyEmail,
         subject: `New ${source === "tag_partnership" ? "partnership" : "contact"} enquiry from ${name}`,
         html: `
