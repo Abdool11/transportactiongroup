@@ -1,10 +1,9 @@
+"use client";
+
 // DATA REQUIREMENTS:
-// - Impact metrics: GET /api/metrics → TagMetrics (see types/index.ts)
-//   Fields: action_plans, workshops, partners, countries, last_updated, data_source
-//   Fallback: IMPACT_STRIP_FALLBACK from lib/constants.ts
+// - Impact metrics: static fallback from lib/constants.ts
 // All other content is static from lib/constants.ts
 
-import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -28,13 +27,6 @@ import {
   IMPACT_STRIP_FALLBACK,
   ECOSYSTEM_SECTION,
 } from "@/lib/constants";
-import { fetchGfaStats } from "@/components/LiveGfaStats";
-
-export const metadata: Metadata = {
-  title: "Transport Action Group | Enabling Green Freight Transformation",
-  description:
-    "Creating the enabling environment for green freight transformation through action plans, strategic interventions, ecosystem alignment, and partner mobilisation.",
-};
 
 const ICON_MAP: Record<string, React.ElementType> = {
   MapPin,
@@ -113,9 +105,9 @@ const PAPERS = [
   },
 ];
 
-export default async function HomePage() {
+export default function HomePage() {
   const metrics = IMPACT_STRIP_FALLBACK;
-  const gfaStats = await fetchGfaStats();
+  const gfaStats = { drivers: metrics.seatsBooked ?? metrics.drivers ?? 252, certificates: metrics.certifications ?? 207 };
 
   return (
     <div className="min-h-screen bg-background">
