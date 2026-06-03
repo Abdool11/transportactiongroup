@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, ExternalLink, BookOpen, Users, Award, TrendingUp } from "lucide-react";
+import { ExternalLink, BookOpen, Users, Award, TrendingUp, Zap } from "lucide-react";
 
 export const dynamic = "force-dynamic";
-
 
 export const metadata: Metadata = {
   title: "GreenFreightAcademy | Transport Action Group",
@@ -17,39 +16,36 @@ const FEATURES = [
   { icon: TrendingUp, title: "Performance-linked outcomes", body: "GFA programmes are designed around measurable business outcomes — fuel efficiency, safety performance, compliance, and emissions reduction — not just learning completion." },
 ];
 
-// PRICING_STUB: Asif — replace GFA_PRICING_API_URL with the live GFA /api/pricing endpoint
-// e.g. https://greenfreightacademy.co.za/api/pricing
-const GFA_PRICING_API_URL = process.env.GFA_PRICING_API_URL ?? "";
-
-interface Programme {
-  name: string;
-  audience: string;
-  type: string;
-  price: string;
-}
-
-async function fetchProgrammePricing(): Promise<Programme[]> {
-  const FALLBACK: Programme[] = [
-    { name: "Professional Truck Driver", audience: "Drivers", type: "Subscription", price: "R35/month" },
-    { name: "Eco-Driver Certification", audience: "Drivers", type: "Subscription", price: "R35/month" },
-    { name: "Introduction to Green Freight", audience: "Management", type: "Once-off", price: "R1,000" },
-    { name: "Road Freight Manager", audience: "Management", type: "Once-off", price: "R5,000" },
-    { name: "Electric Truck Transformation", audience: "Specialist", type: "Once-off", price: "R5,000" },
-    { name: "Green Freight Procurement", audience: "Specialist", type: "Once-off", price: "R5,000" },
-  ];
-  if (!GFA_PRICING_API_URL) return FALLBACK;
+/**
+ * Fetches programme pricing from GFA constants via the GFA API.
+ * Falls back to importing directly from the shared constants file.
+ * Single source of truth: greenfreightacademy/lib/constants.ts
+ */
+async function fetchProgrammes() {
+  // Import directly from the GFA constants — monorepo allows cross-app imports
+  // This ensures TAG always reflects the exact same data as GFA with zero duplication
   try {
-    const res = await fetch(GFA_PRICING_API_URL, { next: { revalidate: 300 } });
-    if (!res.ok) return FALLBACK;
-    const data = await res.json();
-    return Array.isArray(data.programmes) ? data.programmes : FALLBACK;
+    const { PROGRAMMES } = await import("../../greenfreightacademy/lib/constants");
+    return PROGRAMMES;
   } catch {
-    return FALLBACK;
+    // Fallback: return empty array; table will not render rather than show stale prices
+    return [];
   }
 }
 
 export default async function AcademyPage() {
-  const PROGRAMMES = await fetchProgrammePricing();
+  const PROGRAMMES = await fetchProgrammes();
+
+  const driverProgrammes = PROGRAMMES.filter(
+    (p: { tier: string; status?: string }) => p.tier === "workforce" && (p as { status?: string }).status !== "coming-soon"
+  );
+  const managementProgrammes = PROGRAMMES.filter(
+    (p: { tier: string; status?: string }) => p.tier === "enterprise" && (p as { status?: string }).status !== "coming-soon"
+  );
+  const comingSoonProgrammes = PROGRAMMES.filter(
+    (p: { status?: string }) => (p as { status?: string }).status === "coming-soon"
+  );
+
   return (
     <div className="min-h-screen bg-background pt-32 pb-24">
       <div className="container max-w-5xl">
@@ -73,31 +69,107 @@ export default async function AcademyPage() {
           ))}
         </div>
 
-        <div className="mb-16">
-          <h2 className="text-2xl font-semibold mb-6">Available programmes</h2>
-          <div className="card overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left p-4 font-semibold">Programme</th>
-                  <th className="text-left p-4 font-semibold">Audience</th>
-                  <th className="text-left p-4 font-semibold">Type</th>
-                  <th className="text-left p-4 font-semibold">Price</th>
-                </tr>
-              </thead>
-              <tbody>
-                {PROGRAMMES.map(({ name, audience, type, price }) => (
-                  <tr key={name} className="border-b border-border last:border-0">
-                    <td className="p-4 font-medium">{name}</td>
-                    <td className="p-4 text-muted-foreground">{audience}</td>
-                    <td className="p-4 text-muted-foreground">{type}</td>
-                    <td className="p-4 text-primary font-medium">{price}</td>
+        {/* Programmes table — fully dynamic from GFA constants */}
+        {PROGRAMMES.length > 0 && (
+          <div className="mb-10">
+            <h2 className="text-2xl font-semibold mb-6">Available programmes</h2>
+            <div className="card overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left p-4 font-semibold">Programme</th>
+                    <th className="text-left p-4 font-semibold">Audience</th>
+                    <th className="text-left p-4 font-semibold">Type</th>
+                    <th className="text-left p-4 font-semibold">Price</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {[...driverProgrammes, ...managementProgrammes].map((prog: {
+                    id: string; title: string; audienceLabel: string;
+                    pricingModel: string; priceLabel: string;
+                  }) => (
+                    <tr key={prog.id} className="border-b border-border last:border-0">
+                      <td className="p-4 font-medium">{prog.title}</td>
+                      <td className="p-4 text-muted-foreground">{prog.audienceLabel}</td>
+                      <td className="p-4 text-muted-foreground">
+                        {prog.pricingModel === "monthly-per-driver" ? "Subscription" : "Once-off"}
+                      </td>
+                      <td className="p-4 font-medium text-primary">{prog.priceLabel}</td>
+                    </tr>
+                  ))}
+                  {comingSoonProgrammes.map((prog: {
+                    id: string; title: string; audienceLabel: string;
+                    pricingModel: string; priceLabel: string;
+                  }) => (
+                    <tr key={prog.id} className="border-b border-border last:border-0 opacity-75">
+                      <td className="p-4 font-medium">
+                        <span className="flex items-center gap-2">
+                          <Zap size={13} className="text-green-400 flex-shrink-0" />
+                          {prog.title}
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold bg-green-500/10 text-green-400 border border-green-500/20">
+                            Coming soon
+                          </span>
+                        </span>
+                      </td>
+                      <td className="p-4 text-muted-foreground">{prog.audienceLabel}</td>
+                      <td className="p-4 text-muted-foreground">Once-off</td>
+                      <td className="p-4 font-medium text-green-400">{prog.priceLabel}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Coming soon EV teaser cards — dynamic from constants */}
+        {comingSoonProgrammes.map((prog: {
+          id: string; title: string; fullDescription: string;
+          outcomes: string[]; price: number; durationLabel: string; slug: string;
+        }) => (
+          <div key={prog.id} className="card p-6 mb-8 border border-green-500/20 bg-green-500/5">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Zap size={20} className="text-green-400" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <h3 className="font-semibold text-base">{prog.title} — Coming Soon</h3>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-green-500/12 text-green-400 border border-green-500/25">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />
+                    New programme
+                  </span>
+                </div>
+                <p className="text-muted-foreground text-sm leading-relaxed mb-4 max-w-2xl">
+                  {prog.fullDescription}
+                </p>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {prog.outcomes.map((item: string) => (
+                    <span key={item} className="px-2.5 py-1 rounded-md text-xs bg-green-500/8 border border-green-500/15 text-muted-foreground">
+                      {item}
+                    </span>
+                  ))}
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="text-green-400 font-bold text-lg">
+                    R{prog.price.toLocaleString()}{" "}
+                    <span className="text-sm font-normal text-muted-foreground">
+                      launch price · once-off per driver · {prog.durationLabel}
+                    </span>
+                  </span>
+                  <a
+                    href={`https://greenfreightacademy.co.za/contact?type=ev-driver-interest&programme=${prog.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-outline text-sm py-1.5"
+                  >
+                    Register your interest <ExternalLink size={13} />
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
 
         <div className="card p-8">
           <img src="/gfa-logo.png" alt="GreenFreightAcademy" className="h-10 w-auto mb-3" />
