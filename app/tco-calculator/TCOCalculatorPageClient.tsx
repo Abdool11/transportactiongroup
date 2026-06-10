@@ -480,6 +480,19 @@ function SoftLoginModal({ exportType, onSubmit, onClose }: {
   );
 }
 
+// ─── Tour Button (needs to be inside TCOTourProvider to call useTCOTour) ─────
+function TourStartButton() {
+  const { startTour } = useTCOTour();
+  return (
+    <button
+      onClick={startTour}
+      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-green-500/40 bg-green-500/10 text-green-400 text-sm hover:bg-green-500/20 transition-colors font-medium"
+    >
+      <Play size={13} /> Guided tour
+    </button>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function TCOCalculatorPageClient() {
   const printRef = useRef<HTMLDivElement>(null);
@@ -600,61 +613,6 @@ export default function TCOCalculatorPageClient() {
 
   return (
     <TCOTourProvider>
-      <TCOTourInner
-        loginModal={loginModal}
-        setLoginModal={setLoginModal}
-        handleExport={handleExport}
-        printRef={printRef}
-        inputs={inputs}
-        setInputs={setInputs}
-        currencyCode={currencyCode}
-        setCurrencyCode={setCurrencyCode}
-        currencyOpen={currencyOpen}
-        setCurrencyOpen={setCurrencyOpen}
-        truckType={truckType}
-        setTruckType={setTruckType}
-        useCase={useCase}
-        setUseCase={setUseCase}
-        notes={notes}
-        setNotes={setNotes}
-        fleetSize={fleetSize}
-        setFleetSize={setFleetSize}
-        routePlannerOpen={routePlannerOpen}
-        setRoutePlannerOpen={setRoutePlannerOpen}
-        optOpen={optOpen}
-        setOptOpen={setOptOpen}
-        result={result}
-        chartData={chartData}
-        savingData={savingData}
-        comparisonYears={comparisonYears}
-        electricIsCheaper={electricIsCheaper}
-        currency={currency}
-        set={set}
-        handleCurrencyChange={handleCurrencyChange}
-        fmt={fmt}
-        fmtShort={fmtShort}
-        fmtCpm={fmtCpm}
-        co2Saved={co2Saved}
-      />
-    </TCOTourProvider>
-  );
-}
-
-// ─── Inner component that can access the tour context ─────────────────────────
-function TCOTourInner(props: any) {
-  const { startTour } = useTCOTour();
-  const {
-    loginModal, setLoginModal, handleExport, printRef,
-    inputs, setInputs, currencyCode, setCurrencyCode, currencyOpen, setCurrencyOpen,
-    truckType, setTruckType, useCase, setUseCase, notes, setNotes,
-    fleetSize, setFleetSize, routePlannerOpen, setRoutePlannerOpen,
-    optOpen, setOptOpen, result, chartData, savingData, comparisonYears,
-    electricIsCheaper, currency, set, handleCurrencyChange,
-    fmt, fmtShort, fmtCpm, co2Saved,
-  } = props;
-
-  return (
-    <>
       <TCODemoTourOverlay />
       {loginModal && (
         <SoftLoginModal
@@ -692,12 +650,7 @@ function TCOTourInner(props: any) {
                 </p>
               </div>
               <div id="tco-export" className="flex gap-2 flex-shrink-0 no-print flex-wrap">
-                <button
-                  onClick={startTour}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-green-500/40 bg-green-500/10 text-green-400 text-sm hover:bg-green-500/20 transition-colors font-medium"
-                >
-                  <Play size={13} /> Guided tour
-                </button>
+                <TourStartButton />
                 <button onClick={() => setLoginModal("pdf")}
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border/60 text-sm hover:bg-muted/40 transition-colors">
                   <FileText size={14} /> Download PDF
@@ -777,7 +730,7 @@ function TCOTourInner(props: any) {
                 </select>
               </div>
               {/* Notes */}
-              <div id="tco-notes">
+              <div>
                 <label className="text-xs text-muted-foreground block mb-1.5">Notes</label>
                 <textarea value={notes} onChange={e => setNotes(e.target.value)}
                   placeholder="Fleet size, route, operator name…" rows={3}
@@ -894,10 +847,11 @@ function TCOTourInner(props: any) {
           {/* ═══════════════════════════════════════════════════════════════════
               SECTION 3: TCO SUMMARY CARD (below optimizer)
           ════════════════════════════════════════════════════════════════════ */}
-           <div id="tco-summary" className={`card p-6 mb-6 border-l-2 ${electricIsCheaper ? "border-l-green-500" : "border-l-amber-500"}`}>
+          <div id="tco-summary" className={`card p-6 mb-6 border-l-2 ${electricIsCheaper ? "border-l-green-500" : "border-l-amber-500"}`}>
             <h2 className="text-base font-semibold mb-4">TCO Summary</h2>
+
             {/* Fleet size stepper */}
-            <div id="tco-fleet-size" className="flex items-center justify-between mb-4 pb-4 border-b border-border/30">
+            <div className="flex items-center justify-between mb-4 pb-4 border-b border-border/30">
               <div>
                 <p className="text-sm font-medium">Number of trucks in fleet</p>
                 <p className="text-xs text-muted-foreground mt-0.5">Scales cost savings and CO₂ emissions saved</p>
@@ -1218,6 +1172,6 @@ function TCOTourInner(props: any) {
 
         </div>
       </div>
-    </>
+    </TCOTourProvider>
   );
 }
