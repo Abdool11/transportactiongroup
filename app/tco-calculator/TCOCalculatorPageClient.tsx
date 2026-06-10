@@ -1,7 +1,9 @@
 "use client";
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { ArrowLeft, Info, Download, FileText, ChevronDown, ChevronUp, X } from "lucide-react";
+import { ArrowLeft, Info, Download, FileText, ChevronDown, ChevronUp, X, Play } from "lucide-react";
+import { TCOTourProvider, useTCOTour } from "@/lib/tco-tour-context";
+import TCODemoTourOverlay from "@/components/TCODemoTourOverlay";
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip as ReTooltip, Legend, ResponsiveContainer, Cell,
@@ -597,7 +599,63 @@ export default function TCOCalculatorPageClient() {
   };
 
   return (
+    <TCOTourProvider>
+      <TCOTourInner
+        loginModal={loginModal}
+        setLoginModal={setLoginModal}
+        handleExport={handleExport}
+        printRef={printRef}
+        inputs={inputs}
+        setInputs={setInputs}
+        currencyCode={currencyCode}
+        setCurrencyCode={setCurrencyCode}
+        currencyOpen={currencyOpen}
+        setCurrencyOpen={setCurrencyOpen}
+        truckType={truckType}
+        setTruckType={setTruckType}
+        useCase={useCase}
+        setUseCase={setUseCase}
+        notes={notes}
+        setNotes={setNotes}
+        fleetSize={fleetSize}
+        setFleetSize={setFleetSize}
+        routePlannerOpen={routePlannerOpen}
+        setRoutePlannerOpen={setRoutePlannerOpen}
+        optOpen={optOpen}
+        setOptOpen={setOptOpen}
+        result={result}
+        chartData={chartData}
+        savingData={savingData}
+        comparisonYears={comparisonYears}
+        electricIsCheaper={electricIsCheaper}
+        currency={currency}
+        set={set}
+        handleCurrencyChange={handleCurrencyChange}
+        fmt={fmt}
+        fmtShort={fmtShort}
+        fmtCpm={fmtCpm}
+        co2Saved={co2Saved}
+      />
+    </TCOTourProvider>
+  );
+}
+
+// ─── Inner component that can access the tour context ─────────────────────────
+function TCOTourInner(props: any) {
+  const { startTour } = useTCOTour();
+  const {
+    loginModal, setLoginModal, handleExport, printRef,
+    inputs, setInputs, currencyCode, setCurrencyCode, currencyOpen, setCurrencyOpen,
+    truckType, setTruckType, useCase, setUseCase, notes, setNotes,
+    fleetSize, setFleetSize, routePlannerOpen, setRoutePlannerOpen,
+    optOpen, setOptOpen, result, chartData, savingData, comparisonYears,
+    electricIsCheaper, currency, set, handleCurrencyChange,
+    fmt, fmtShort, fmtCpm, co2Saved,
+  } = props;
+
+  return (
     <>
+      <TCODemoTourOverlay />
       {loginModal && (
         <SoftLoginModal
           exportType={loginModal}
@@ -633,7 +691,13 @@ export default function TCOCalculatorPageClient() {
                   <strong>Disclaimer:</strong> Indicative planning tool only. Consult a qualified fleet finance specialist before making capital investment decisions.
                 </p>
               </div>
-              <div className="flex gap-2 flex-shrink-0 no-print">
+              <div id="tco-export" className="flex gap-2 flex-shrink-0 no-print flex-wrap">
+                <button
+                  onClick={startTour}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-green-500/40 bg-green-500/10 text-green-400 text-sm hover:bg-green-500/20 transition-colors font-medium"
+                >
+                  <Play size={13} /> Guided tour
+                </button>
                 <button onClick={() => setLoginModal("pdf")}
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border/60 text-sm hover:bg-muted/40 transition-colors">
                   <FileText size={14} /> Download PDF
@@ -647,11 +711,11 @@ export default function TCOCalculatorPageClient() {
           </div>
 
           {/* ── Calculation Context bar ── */}
-          <div className="card p-5 mb-6 no-print">
+          <div id="tco-context-bar" className="card p-5 mb-6 no-print">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-4">Calculation context</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Currency */}
-              <div>
+              <div id="tco-currency">
                 <label className="text-xs text-muted-foreground block mb-1.5">Currency</label>
                 <div className="relative">
                   <button type="button" onClick={() => setCurrencyOpen(!currencyOpen)}
@@ -681,7 +745,7 @@ export default function TCOCalculatorPageClient() {
                 )}
               </div>
               {/* Truck type */}
-              <div>
+              <div id="tco-truck-type">
                 <label className="text-xs text-muted-foreground block mb-1.5">Truck type</label>
                 <select value={truckType} onChange={e => setTruckType(e.target.value)}
                   className="w-full bg-background border border-border/50 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
@@ -713,7 +777,7 @@ export default function TCOCalculatorPageClient() {
                 </select>
               </div>
               {/* Notes */}
-              <div>
+              <div id="tco-notes">
                 <label className="text-xs text-muted-foreground block mb-1.5">Notes</label>
                 <textarea value={notes} onChange={e => setNotes(e.target.value)}
                   placeholder="Fleet size, route, operator name…" rows={3}
@@ -727,7 +791,7 @@ export default function TCOCalculatorPageClient() {
           ════════════════════════════════════════════════════════════════════ */}
           <div className="grid lg:grid-cols-2 gap-6 mb-6">
             {/* Cumulative cost line chart */}
-            <div className="card p-5">
+            <div id="tco-chart-cumulative" className="card p-5">
               <h2 className="text-sm font-semibold mb-0.5">Cumulative cost over time</h2>
               <p className="text-xs text-muted-foreground mb-4">Total accumulated cost including purchase price and operating costs.</p>
               <ResponsiveContainer width="100%" height={240}>
@@ -744,7 +808,7 @@ export default function TCOCalculatorPageClient() {
             </div>
 
             {/* Annual saving bar chart */}
-            <div className="card p-5">
+            <div id="tco-chart-annual" className="card p-5">
               <h2 className="text-sm font-semibold mb-0.5">Cumulative saving by year</h2>
               <p className="text-xs text-muted-foreground mb-4">
                 {electricIsCheaper
@@ -770,7 +834,7 @@ export default function TCOCalculatorPageClient() {
           {/* ═══════════════════════════════════════════════════════════════════
               SECTION 2: TCO OPTIMIZER — MIXING DESK
           ════════════════════════════════════════════════════════════════════ */}
-          <div className="card mb-6 no-print overflow-hidden">
+          <div id="tco-sliders" className="card mb-6 no-print overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
               <div>
@@ -830,11 +894,10 @@ export default function TCOCalculatorPageClient() {
           {/* ═══════════════════════════════════════════════════════════════════
               SECTION 3: TCO SUMMARY CARD (below optimizer)
           ════════════════════════════════════════════════════════════════════ */}
-          <div className={`card p-6 mb-6 border-l-2 ${electricIsCheaper ? "border-l-green-500" : "border-l-amber-500"}`}>
+           <div id="tco-summary" className={`card p-6 mb-6 border-l-2 ${electricIsCheaper ? "border-l-green-500" : "border-l-amber-500"}`}>
             <h2 className="text-base font-semibold mb-4">TCO Summary</h2>
-
             {/* Fleet size stepper */}
-            <div className="flex items-center justify-between mb-4 pb-4 border-b border-border/30">
+            <div id="tco-fleet-size" className="flex items-center justify-between mb-4 pb-4 border-b border-border/30">
               <div>
                 <p className="text-sm font-medium">Number of trucks in fleet</p>
                 <p className="text-xs text-muted-foreground mt-0.5">Scales cost savings and CO₂ emissions saved</p>
@@ -863,7 +926,7 @@ export default function TCOCalculatorPageClient() {
             </div>
 
             {/* Saving banner — prominent */}
-            <div className={`rounded-2xl p-5 mb-4 ${electricIsCheaper ? "bg-green-500/10 border-2 border-green-500/30" : "bg-amber-500/10 border-2 border-amber-500/30"}`}>
+            <div id="tco-savings-banner" className={`rounded-2xl p-5 mb-4 ${electricIsCheaper ? "bg-green-500/10 border-2 border-green-500/30" : "bg-amber-500/10 border-2 border-amber-500/30"}`}>
               {electricIsCheaper ? (
                 <>
                   <p className="text-xs font-semibold uppercase tracking-widest text-green-400/70 mb-1">Total saving over comparison period</p>
@@ -924,7 +987,7 @@ export default function TCOCalculatorPageClient() {
           ════════════════════════════════════════════════════════════════════ */}
           <div className="grid lg:grid-cols-2 gap-8 mb-6 no-print">
             {/* Diesel inputs */}
-            <div className="card p-6 border-l-2 border-l-amber-500/50">
+            <div id="tco-diesel-params" className="card p-6 border-l-2 border-l-amber-500/50">
               <h2 className="text-base font-semibold mb-1">Diesel truck — detailed inputs</h2>
               <p className="text-xs text-muted-foreground mb-4">Typical 6×4 tractor-trailer combination</p>
               <div className="mb-4 pb-4 border-b border-border/40">
@@ -954,7 +1017,7 @@ export default function TCOCalculatorPageClient() {
             </div>
 
             {/* Electric inputs */}
-            <div className="card p-6 border-l-2 border-l-green-500/50">
+            <div id="tco-electric-params" className="card p-6 border-l-2 border-l-green-500/50">
               <h2 className="text-base font-semibold mb-1">Electric truck — detailed inputs</h2>
               <p className="text-xs text-muted-foreground mb-4">Battery electric equivalent</p>
               <div className="mb-4 pb-4 border-b border-border/40">
@@ -987,7 +1050,7 @@ export default function TCOCalculatorPageClient() {
           {/* ═══════════════════════════════════════════════════════════════════
               SECTION 5: YEAR-BY-YEAR TABLE
           ════════════════════════════════════════════════════════════════════ */}
-          <div className="card p-6 mb-6">
+          <div id="tco-year-table" className="card p-6 mb-6">
             <h2 className="text-base font-semibold mb-1">Year-by-year costs</h2>
             <p className="text-xs text-muted-foreground mb-4">Comparison runs for {comparisonYears} years.</p>
             <div className="overflow-x-auto">
