@@ -27,7 +27,7 @@ export const NAV_LINKS = [
   { label: "What we do", href: "/services" },
   { label: "Green Freight", href: "/green-freight" },
   { label: "Electric Trucks", href: "/electric-truck" },
-  { label: "TCO Calculator", href: "/tco-calculator" },
+  { label: "TCO Calculator", href: "/tco-v2" },
   { label: "Academy", href: "/academy" },
   { label: "Publications", href: "/books" },
   { label: "Ecosystem Partners", href: "/ecosystem-partners" },
@@ -282,7 +282,7 @@ export const FOOTER_LINKS = [
     heading: "Knowledge",
     links: [
       { label: "Publications", href: "/books" },
-      { label: "TCO Calculator", href: "/tco-calculator" },
+      { label: "TCO Calculator", href: "/tco-v2" },
       { label: "Academy", href: "/academy" },
     ],
   },
