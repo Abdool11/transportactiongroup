@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   LineChart, Line, BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid,
@@ -499,7 +500,7 @@ export default function TCOv2Client() {
   const [sellingPricePerKm, setSellingPricePerKm] = useState(20);
   const [detailOpen, setDetailOpen] = useState(true);
   const [optOpen, setOptOpen] = useState(false);
-
+  const router = useRouter();
   const currency = getCurrency(currencyCode);
 
   const set = useCallback((field: keyof Inputs) => (value: number | boolean) => {
@@ -571,6 +572,20 @@ export default function TCOv2Client() {
 
   const electricIsCheaper = finalResult.totalSaving > 0;
   const electricMoreProfitable = finalResult.totalProfitDelta > 0;
+
+  const handleRunSensitivity = useCallback(() => {
+    const state = {
+      inputs: {
+        ...inputs,
+        revenuePerKm: effectiveRevenuePerKm,
+        currency: currencyCode,
+        currencySymbol: currency.symbol,
+      },
+      marginPct,
+    };
+    sessionStorage.setItem("tco_sensitivity_state", JSON.stringify(state));
+    router.push("/tco-v2/sensitivity");
+  }, [inputs, effectiveRevenuePerKm, currencyCode, currency.symbol, marginPct, router]);
 
   const fmt = (n: number) =>
     `${currency.symbol}${new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(Math.round(n))}`;
@@ -983,6 +998,25 @@ export default function TCOv2Client() {
         </div>
 
         {/* SECTION 4 removed — input table moved above revenue card */}
+
+        {/* ══════════════════════════════════════════════════════════════════
+            SECTION 4b: SENSITIVITY ANALYSIS CTA
+        ══════════════════════════════════════════════════════════════════ */}
+        <div className="card p-5 flex flex-col sm:flex-row items-center justify-between gap-4 border border-amber-500/20 bg-amber-500/5">
+          <div>
+            <p className="text-sm font-semibold text-white mb-1">Want to stress-test these numbers?</p>
+            <p className="text-xs text-muted-foreground max-w-lg">
+              Run a sensitivity analysis to see which variables — diesel price escalation, BEV purchase price, electricity tariff, or annual km — have the greatest impact on your profit advantage.
+            </p>
+          </div>
+          <button
+            onClick={handleRunSensitivity}
+            className="shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-sm font-bold transition-colors"
+          >
+            <TrendingUp size={15} />
+            Run Sensitivity Analysis →
+          </button>
+        </div>
 
         {/* ══════════════════════════════════════════════════════════════════
             SECTION 5: PILOT CTA
