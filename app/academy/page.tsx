@@ -47,7 +47,7 @@ const PROGRAMMES = [
     tier: "enterprise" as const,
     audienceLabel: "All staff",
     pricingModel: "once-off",
-    priceLabel: "R1,000 per person",
+    priceLabel: "R999 per person",
     status: "in-development",
   },
   {
@@ -57,7 +57,7 @@ const PROGRAMMES = [
     tier: "enterprise" as const,
     audienceLabel: "Managers",
     pricingModel: "once-off",
-    priceLabel: "R1,000 per person",
+    priceLabel: "R999 per person",
     status: "in-development",
   },
   {
@@ -67,7 +67,7 @@ const PROGRAMMES = [
     tier: "transition" as const,
     audienceLabel: "Transition leaders",
     pricingModel: "once-off",
-    priceLabel: "R5,000 per person",
+    priceLabel: "R4,999 per person",
     status: "in-development",
   },
   {
@@ -77,7 +77,7 @@ const PROGRAMMES = [
     tier: "transition" as const,
     audienceLabel: "Procurement teams",
     pricingModel: "once-off",
-    priceLabel: "R5,000 per person",
+    priceLabel: "R4,999 per person",
     status: "in-development",
   },
 ];
