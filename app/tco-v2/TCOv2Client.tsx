@@ -777,7 +777,15 @@ export default function TCOv2Client() {
         <div className="grid lg:grid-cols-2 gap-4 mb-4">
           {/* TCO Cumulative */}
           <div className="card p-4">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">Cumulative Cost (TCO)</h3>
+            <div className="flex items-start justify-between mb-1">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Cumulative Cost (TCO)</h3>
+              <div className="text-right">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">Lifetime Cost Difference</p>
+                <p className={`text-sm font-bold ${finalResult.totalSaving > 0 ? 'text-green-400' : 'text-amber-400'}`}>
+                  {finalResult.totalSaving > 0 ? '−' : '+'}{fmtShort(Math.abs(finalResult.totalSaving))} electric saves
+                </p>
+              </div>
+            </div>
             <p className="text-xs text-muted-foreground mb-3">Total accumulated cost including purchase and operating costs.</p>
             <ResponsiveContainer width="100%" height={160}>
               <LineChart data={tcoChartData} margin={{ top: 4, right: 64, left: 0, bottom: 0 }}>
@@ -796,7 +804,15 @@ export default function TCOv2Client() {
 
           {/* Cumulative Profit */}
           <div className="card p-4">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">Cumulative Profit</h3>
+            <div className="flex items-start justify-between mb-1">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Cumulative Profit</h3>
+              <div className="text-right">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">Lifetime Profit Difference</p>
+                <p className={`text-sm font-bold ${finalResult.totalProfitDelta > 0 ? 'text-green-400' : 'text-amber-400'}`}>
+                  {finalResult.totalProfitDelta > 0 ? '+' : ''}{fmtShort(finalResult.totalProfitDelta)} electric advantage
+                </p>
+              </div>
+            </div>
             <p className="text-xs text-muted-foreground mb-3">Total profit generated per truck after all costs, at your revenue rate.</p>
             <ResponsiveContainer width="100%" height={160}>
               <LineChart data={profitChartData} margin={{ top: 4, right: 64, left: 0, bottom: 0 }}>
