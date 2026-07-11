@@ -8,8 +8,85 @@ import {
 } from "recharts";
 import {
   X, ChevronDown, ChevronUp, Info, Play, TrendingUp,
-  Truck, Zap, DollarSign, Target, Users, ArrowRight,
+  Truck, Zap, DollarSign, Target, Users, ArrowRight, FileText, Download,
 } from "lucide-react";
+
+// ─── UserInfo type ────────────────────────────────────────────────────────────
+interface UserInfo { name: string; email: string; company: string; country: string; }
+
+// ─── CSV Export ───────────────────────────────────────────────────────────────
+function exportCSVv2(inputs: Inputs, result: ReturnType<typeof calcTCO>, currencyCode: string, sym: string, truckType: string, useCase: string) {
+  const rows: (string | number)[][] = [
+    ["TCO Calculator Export — Transport Action Group"],
+    ["Currency", currencyCode],
+    ["Truck type", truckType || "N/A"],
+    ["Use case", useCase || "N/A"],
+    [],
+    ["Year", "Diesel Annual Cost", "Electric Annual Cost", "Diesel Cumulative", "Electric Cumulative", "Diesel Profit", "Electric Profit", "Profit Advantage"],
+    ...result.years.map(r => [
+      `Y${r.year}`,
+      r.dieselAnnual.toFixed(0), r.electricAnnual.toFixed(0),
+      r.dieselCumulative.toFixed(0), r.electricCumulative.toFixed(0),
+      r.dieselProfit.toFixed(0), r.electricProfit.toFixed(0),
+      r.profitDelta.toFixed(0),
+    ]),
+    [],
+    ["Diesel TCO", result.dieselTCO.toFixed(0)],
+    ["Electric TCO", result.electricTCO.toFixed(0)],
+    ["Diesel CPM", `${sym}${result.dieselCpm.toFixed(2)}/km`],
+    ["Electric CPM", `${sym}${result.electricCpm.toFixed(2)}/km`],
+    ["Lifetime Cost Difference", result.totalSaving.toFixed(0)],
+    ["Lifetime Profit Advantage (Electric)", result.totalProfitDelta.toFixed(0)],
+  ];
+  const csv = rows.map(r => r.join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "TAG-TCO-Calculator-v2.csv"; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ─── Soft Login Modal ─────────────────────────────────────────────────────────
+function SoftLoginModalV2({ exportType, onSubmit, onClose }: {
+  exportType: "csv" | "pdf";
+  onSubmit: (info: UserInfo) => void;
+  onClose: () => void;
+}) {
+  const [name, setName] = React.useState("");
+  const [email, setEmail] = React.useState("");
+  const [company, setCompany] = React.useState("");
+  const [country, setCountry] = React.useState("");
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-base font-semibold">Download {exportType.toUpperCase()}</h3>
+          <button type="button" onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors"><X size={16} /></button>
+        </div>
+        <p className="text-xs text-muted-foreground mb-4">Enter your details to receive your TCO report.</p>
+        <div className="space-y-3">
+          {([
+            { label: "Name *", value: name, set: setName, placeholder: "Your name" },
+            { label: "Email *", value: email, set: setEmail, placeholder: "you@company.com" },
+            { label: "Company *", value: company, set: setCompany, placeholder: "Fleet operator name" },
+            { label: "Country", value: country, set: setCountry, placeholder: "South Africa" },
+          ] as { label: string; value: string; set: (v: string) => void; placeholder: string }[]).map(f => (
+            <div key={f.label}>
+              <label className="text-xs text-muted-foreground block mb-1">{f.label}</label>
+              <input value={f.value} onChange={e => f.set(e.target.value)} placeholder={f.placeholder}
+                className="w-full bg-background border border-border/50 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
+            </div>
+          ))}
+        </div>
+        <button type="button" disabled={!name || !email || !company}
+          onClick={() => onSubmit({ name, email, company, country })}
+          className="w-full mt-4 btn-primary justify-center disabled:opacity-50 disabled:cursor-not-allowed">
+          Download {exportType.toUpperCase()}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Inputs {
@@ -503,6 +580,7 @@ export default function TCOv2Client() {
   const [sellingPricePerKm, setSellingPricePerKm] = useState(20);
   const [detailOpen, setDetailOpen] = useState(true);
   const [optOpen, setOptOpen] = useState(false);
+  const [loginModal, setLoginModal] = useState<"csv" | "pdf" | null>(null);
   const router = useRouter();
   const currency = getCurrency(currencyCode);
 
@@ -576,6 +654,43 @@ export default function TCOv2Client() {
   const electricIsCheaper = finalResult.totalSaving > 0;
   const electricMoreProfitable = finalResult.totalProfitDelta > 0;
 
+  const saveSubmission = async (userInfo: UserInfo, exportType: "csv" | "pdf") => {
+    try {
+      await fetch("/api/tco-submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_name: userInfo.name,
+          user_email: userInfo.email,
+          company: userInfo.company,
+          country: userInfo.country,
+          currency_code: currencyCode,
+          truck_type: truckType,
+          use_case: useCase,
+          inputs_json: inputs,
+          diesel_tco: finalResult.dieselTCO,
+          electric_tco: finalResult.electricTCO,
+          total_saving: finalResult.totalSaving,
+          break_even_year: finalResult.breakEvenYear,
+          export_type: exportType,
+        }),
+      });
+    } catch {
+      // Non-blocking — don't prevent the download if the API fails
+    }
+  };
+
+  const handleExport = async (userInfo: UserInfo) => {
+    const type = loginModal;
+    setLoginModal(null);
+    await saveSubmission(userInfo, type!);
+    if (type === "csv") {
+      exportCSVv2(inputs, finalResult, currencyCode, currency.symbol, truckType, useCase);
+    } else {
+      window.print();
+    }
+  };
+
   const handleRunSensitivity = useCallback(() => {
     const state = {
       inputs: {
@@ -632,6 +747,20 @@ export default function TCOv2Client() {
 
   return (
     <div className="min-h-screen bg-background">
+      {loginModal && (
+        <SoftLoginModalV2
+          exportType={loginModal}
+          onSubmit={handleExport}
+          onClose={() => setLoginModal(null)}
+        />
+      )}
+      <style>{`
+        @media print {
+          nav, header, footer, .no-print { display: none !important; }
+          body { background: white !important; color: black !important; }
+          .card { border: 1px solid #ccc !important; background: white !important; }
+        }
+      `}</style>
       <div className="max-w-5xl mx-auto px-4 pt-28 pb-8">
 
         {/* ── Header ── */}
@@ -644,6 +773,14 @@ export default function TCOv2Client() {
           </div>
           {/* Context bar */}
           <div className="flex items-center gap-2 flex-wrap justify-end">
+            <button type="button" onClick={() => setLoginModal("pdf")}
+              className="no-print inline-flex items-center gap-1.5 text-xs bg-muted/30 border border-border/40 rounded-lg px-3 py-2 hover:bg-muted/50 transition-colors">
+              <FileText size={12} /> Download PDF
+            </button>
+            <button type="button" onClick={() => setLoginModal("csv")}
+              className="no-print inline-flex items-center gap-1.5 text-xs bg-muted/30 border border-border/40 rounded-lg px-3 py-2 hover:bg-muted/50 transition-colors">
+              <Download size={12} /> Export CSV
+            </button>
             {/* Currency */}
             <div className="relative">
               <button type="button" onClick={() => setCurrencyOpen(!currencyOpen)}
