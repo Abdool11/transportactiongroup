@@ -161,8 +161,11 @@ function calcTCO(inputs: Inputs, revenuePerKm: number) {
     const revenueEscalated = revenuePerKm * Math.pow(1.05, y - 1);
     const dieselRevenue = revenueEscalated * dAnnualKm;
     const electricRevenue = revenueEscalated * eAnnualKm;
-    const dieselProfit = dieselRevenue - dieselAnnual;
-    const electricProfit = electricRevenue - electricAnnual;
+    // Option A: add residual value as cash inflow in the final year of each truck's life
+    const dResidualInflow = (y === dLife) ? inputs.dieselPurchasePrice * (inputs.dieselResidualPct / 100) : 0;
+    const eResidualInflow = (y === eLife) ? inputs.electricPurchasePrice * (inputs.electricResidualPct / 100) : 0;
+    const dieselProfit = dieselRevenue - dieselAnnual + dResidualInflow;
+    const electricProfit = electricRevenue - electricAnnual + eResidualInflow;
     dieselCumProfit += dieselProfit;
     electricCumProfit += electricProfit;
 
@@ -894,7 +897,8 @@ export default function TCOv2Client() {
           {/* Annual Profit Bars */}
           <div className="card p-4">
             <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">Annual Profit per Truck</h3>
-            <p className="text-xs text-muted-foreground mb-3">Year-by-year profit for each truck type.</p>
+            <p className="text-xs text-muted-foreground mb-1">Year-by-year profit for each truck type.</p>
+            <p className="text-xs text-muted-foreground/50 mb-3 italic">Final year includes residual value from vehicle sale.</p>
             <ResponsiveContainer width="100%" height={160}>
               <BarChart data={annualProfitData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }} barCategoryGap="30%">
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
