@@ -7,7 +7,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceLine, Cell,
 } from "recharts";
-import { ArrowLeft, Download, AlertTriangle, Info } from "lucide-react";
+import { ArrowLeft, Download, AlertTriangle, Info, ChevronDown, ChevronUp, HelpCircle } from "lucide-react";
 
 // ─── Types (mirrored from TCOv2Client) ───────────────────────────────────────
 interface Inputs {
@@ -200,6 +200,44 @@ function TornadoTooltip({ active, payload, label, sym, base }: {
   );
 }
 
+// ─── Variable tooltip descriptions ──────────────────────────────────────────
+const VAR_TOOLTIPS: Record<string, string> = {
+  "Diesel price escalation": "How fast diesel prices rise each year. Higher escalation makes electric more attractive over time — and it is largely outside your control, which is itself an argument for switching sooner.",
+  "BEV purchase price": "The upfront cost of the electric truck. A lower purchase price (through negotiation, fleet incentives, or falling battery costs) directly improves the electric truck's lifetime profit.",
+  "Electricity tariff": "The cost of electricity per kWh. Lower tariffs — from a favourable Eskom rate, time-of-use pricing, or on-site solar — significantly strengthen the electric business case.",
+  "Annual kilometres": "How many kilometres the truck covers each year. Higher utilisation spreads the fixed capital cost over more revenue-generating km, benefiting the electric truck more than diesel due to its lower running cost per km.",
+  "Diesel fuel price": "The current pump price of diesel. A higher diesel price increases the electric truck's cost advantage immediately, independent of escalation.",
+  "Finance rate": "The interest rate on the vehicle loan. Because the electric truck has a higher purchase price, it is more sensitive to finance rate changes — a lower rate disproportionately benefits the electric truck.",
+};
+
+// ─── Variable tooltip component ───────────────────────────────────────────────
+function VarTooltip({ label }: { label: string }) {
+  const [open, setOpen] = React.useState(false);
+  const text = VAR_TOOLTIPS[label];
+  if (!text) return null;
+  return (
+    <span className="relative inline-flex items-center ml-1">
+      <button
+        type="button"
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
+        className="text-muted-foreground hover:text-white transition-colors"
+        aria-label={`About ${label}`}
+      >
+        <HelpCircle size={12} />
+      </button>
+      {open && (
+        <div className="absolute left-5 top-0 z-50 w-64 bg-[#0f1923] border border-border/60 rounded-xl p-3 shadow-2xl text-xs text-muted-foreground leading-relaxed">
+          <p className="font-semibold text-white mb-1">{label}</p>
+          {text}
+        </div>
+      )}
+    </span>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function SensitivityClient() {
   const router = useRouter();
@@ -207,6 +245,7 @@ export default function SensitivityClient() {
   const [band, setBand] = useState(20);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
+  const [showExplainer, setShowExplainer] = useState(true);
   const chartRef = useRef<HTMLDivElement>(null);
 
   // Session guard
@@ -385,12 +424,54 @@ export default function SensitivityClient() {
       </Link>
 
       {/* ── Page header ── */}
-      <div className="mb-6">
+      <div className="mb-4">
         <h1 className="text-2xl font-extrabold text-white mb-1">Sensitivity Analysis</h1>
         <p className="text-sm text-muted-foreground">
           Which input variables have the greatest impact on your electric vs diesel profit advantage?
           Each bar shows how the lifetime profit advantage changes when that variable shifts by ±{band}%.
         </p>
+      </div>
+
+      {/* ── Explainer card ── */}
+      <div className="card mb-6 overflow-hidden transition-all duration-300">
+        <button
+          type="button"
+          onClick={() => setShowExplainer(v => !v)}
+          className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-white/5 transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <Info size={15} className="text-green-400 shrink-0" />
+            <span className="text-sm font-semibold text-white">How to read this chart</span>
+          </div>
+          {showExplainer ? <ChevronUp size={14} className="text-muted-foreground" /> : <ChevronDown size={14} className="text-muted-foreground" />}
+        </button>
+        {showExplainer && (
+          <div className="px-5 pb-5 text-sm text-muted-foreground space-y-3 border-t border-border/30 pt-4">
+            <p>
+              A <strong className="text-white">tornado chart</strong> ranks your key input assumptions by how much they affect the outcome — in this case, the lifetime profit advantage of electric over diesel. The widest bar at the top is your most sensitive variable; the narrowest at the bottom matters least.
+            </p>
+            <p>
+              Each bar has two sides:
+            </p>
+            <ul className="space-y-1.5 pl-4 list-disc">
+              <li><span className="text-green-400 font-semibold">Green (right)</span> — the favourable scenario: the variable moves in a direction that increases the electric truck&apos;s profit advantage.</li>
+              <li><span className="text-red-400 font-semibold">Red (left)</span> — the unfavourable scenario: the variable moves in a direction that reduces the electric truck&apos;s profit advantage.</li>
+            </ul>
+            <p>
+              The <strong className="text-white">sensitivity band</strong> (±10%, ±20%, ±30%) controls how far each variable is shifted from your base case. A wider band shows a more extreme stress test.
+            </p>
+            <p>
+              Hover over the <HelpCircle size={11} className="inline text-muted-foreground mx-0.5" /> icon next to each variable name in the chart for a plain-English explanation of what that variable means and why it matters.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowExplainer(false)}
+              className="text-xs text-muted-foreground hover:text-white transition-colors mt-1"
+            >
+              Close this card
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ── Band selector + Download ── */}
@@ -469,7 +550,16 @@ export default function SensitivityClient() {
               <YAxis
                 type="category"
                 dataKey="label"
-                tick={{ fontSize: 11, fill: "#cbd5e1" }}
+                tick={(props) => {
+                  const { x, y, payload } = props;
+                  return (
+                    <g transform={`translate(${x},${y})`}>
+                      <text x={-8} y={0} dy={4} textAnchor="end" fill="#cbd5e1" fontSize={11}>
+                        {payload.value}
+                      </text>
+                    </g>
+                  );
+                }}
                 axisLine={false}
                 tickLine={false}
                 width={155}
