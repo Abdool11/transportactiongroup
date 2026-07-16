@@ -14,39 +14,445 @@ import {
 // ─── UserInfo type ────────────────────────────────────────────────────────────
 interface UserInfo { name: string; email: string; company: string; country: string; }
 
-// ─── CSV Export ───────────────────────────────────────────────────────────────
-function exportCSVv2(inputs: Inputs, result: ReturnType<typeof calcTCO>, currencyCode: string, sym: string, truckType: string, useCase: string) {
+// ─── CSV Export (comprehensive) ──────────────────────────────────────────────
+function exportCSVv2(
+  inputs: Inputs,
+  result: ReturnType<typeof calcTCO>,
+  currencyCode: string,
+  sym: string,
+  truckType: string,
+  useCase: string,
+  revenuePerKm: number,
+  marginPct: number,
+  fleetSize: number,
+  userName: string,
+  userCompany: string,
+) {
+  const n = (v: number, dp = 0) => v.toFixed(dp);
+  const m = (v: number) => `${sym}${v.toFixed(0)}`;
+  const dKm = inputs.decoupleKmLife ? inputs.dieselMonthlyKm : inputs.monthlyKm;
+  const eKm = inputs.decoupleKmLife ? inputs.electricMonthlyKm : inputs.monthlyKm;
+  const dLife = inputs.decoupleKmLife ? inputs.dieselVehicleLifeYears : inputs.vehicleLifeYears;
+  const eLife = inputs.decoupleKmLife ? inputs.electricVehicleLifeYears : inputs.vehicleLifeYears;
   const rows: (string | number)[][] = [
-    ["TCO Calculator Export — Transport Action Group"],
+    // ── Cover ──
+    ["FLEET PROFIT & TCO ANALYSIS REPORT"],
+    ["Prepared by", "Transport Action Group (TAG)"],
+    ["Website", "www.transportactiongroup.co.za"],
+    ["Prepared for", userName || "Fleet Operator"],
+    ["Company", userCompany || ""],
+    ["Report date", new Date().toLocaleDateString("en-ZA", { day: "2-digit", month: "long", year: "numeric" })],
     ["Currency", currencyCode],
     ["Truck type", truckType || "N/A"],
     ["Use case", useCase || "N/A"],
+    ["Fleet size analysed", fleetSize],
     [],
-    ["Year", "Diesel Annual Cost", "Electric Annual Cost", "Diesel Cumulative", "Electric Cumulative", "Diesel Profit", "Electric Profit", "Profit Advantage"],
+    // ── Section 1: Diesel Inputs ──
+    ["SECTION 1 — DIESEL TRUCK INPUT PARAMETERS"],
+    ["Parameter", "Value", "Unit"],
+    ["Monthly kilometres", dKm, "km/month"],
+    ["Vehicle life", dLife, "years"],
+    ["Annual kilometres", dKm * 12, "km/year"],
+    ["Lifetime kilometres", dKm * 12 * dLife, "km"],
+    ["Purchase price", m(inputs.dieselPurchasePrice), ""],
+    ["Financed", inputs.dieselFinanced ? "Yes" : "No (cash purchase)", ""],
+    ["Deposit", inputs.dieselDepositPct, "%"],
+    ["Deposit amount", m(inputs.dieselPurchasePrice * inputs.dieselDepositPct / 100), ""],
+    ["Finance rate", inputs.dieselFinanceRate, "% p.a."],
+    ["Finance term", inputs.dieselFinanceTerm, "months"],
+    ["Fuel consumption", inputs.dieselFuelConsumption, "L/100km"],
+    ["Diesel price (Year 1)", `${sym}${inputs.dieselFuelPrice.toFixed(2)}`, "/litre"],
+    ["Fuel price escalation", inputs.dieselFuelEscalation, "% p.a."],
+    ["Maintenance", `${sym}${inputs.dieselMaintenanceCpm.toFixed(2)}`, "/km"],
+    ["Insurance (annual)", m(inputs.dieselInsuranceAnnual), ""],
+    ["Residual value", inputs.dieselResidualPct, "% of purchase price"],
+    ["Residual value (amount)", m(inputs.dieselPurchasePrice * inputs.dieselResidualPct / 100), ""],
+    [],
+    // ── Section 2: Electric Inputs ──
+    ["SECTION 2 — ELECTRIC TRUCK INPUT PARAMETERS"],
+    ["Parameter", "Value", "Unit"],
+    ["Monthly kilometres", eKm, "km/month"],
+    ["Vehicle life", eLife, "years"],
+    ["Annual kilometres", eKm * 12, "km/year"],
+    ["Lifetime kilometres", eKm * 12 * eLife, "km"],
+    ["Purchase price", m(inputs.electricPurchasePrice), ""],
+    ["Price premium vs diesel", m(inputs.electricPurchasePrice - inputs.dieselPurchasePrice), `(${((inputs.electricPurchasePrice / inputs.dieselPurchasePrice - 1) * 100).toFixed(0)}% more)`],
+    ["Financed", inputs.electricFinanced ? "Yes" : "No (cash purchase)", ""],
+    ["Deposit", inputs.electricDepositPct, "%"],
+    ["Deposit amount", m(inputs.electricPurchasePrice * inputs.electricDepositPct / 100), ""],
+    ["Finance rate", inputs.electricFinanceRate, "% p.a."],
+    ["Finance term", inputs.electricFinanceTerm, "months"],
+    ["Energy consumption", inputs.electricEnergyConsumption, "kWh/100km"],
+    ["Electricity tariff (Year 1)", `${sym}${inputs.electricEnergyPrice.toFixed(2)}`, "/kWh"],
+    ["Tariff escalation", inputs.electricEnergyEscalation, "% p.a."],
+    ["Maintenance", `${sym}${inputs.electricMaintenanceCpm.toFixed(2)}`, "/km"],
+    ["Maintenance saving vs diesel", `${sym}${(inputs.dieselMaintenanceCpm - inputs.electricMaintenanceCpm).toFixed(2)}`, "/km"],
+    ["Insurance (annual)", m(inputs.electricInsuranceAnnual), ""],
+    ["Residual value", inputs.electricResidualPct, "% of purchase price"],
+    ["Residual value (amount)", m(inputs.electricPurchasePrice * inputs.electricResidualPct / 100), ""],
+    [],
+    // ── Section 3: Revenue & Pricing ──
+    ["SECTION 3 — REVENUE AND PRICING ASSUMPTIONS"],
+    ["Parameter", "Value", "Unit"],
+    ["Selling price per km (Year 1)", `${sym}${revenuePerKm.toFixed(2)}`, "/km"],
+    ["Revenue escalation", "5.00", "% p.a. (fixed)"],
+    ["Diesel margin (Year 1)", `${((revenuePerKm - result.dieselCpm) / revenuePerKm * 100).toFixed(1)}`, "%"],
+    ["Electric margin (Year 1)", `${((revenuePerKm - result.electricCpm) / revenuePerKm * 100).toFixed(1)}`, "%"],
+    ["Diesel cost per km (lifetime avg)", `${sym}${result.dieselCpm.toFixed(2)}`, "/km"],
+    ["Electric cost per km (lifetime avg)", `${sym}${result.electricCpm.toFixed(2)}`, "/km"],
+    [],
+    // ── Section 4: Year-by-Year ──
+    ["SECTION 4 — YEAR-BY-YEAR COST AND PROFIT ANALYSIS (per truck)"],
+    [
+      "Year",
+      `Diesel Annual Cost (${sym})`,
+      `Electric Annual Cost (${sym})`,
+      `Diesel Cumulative Cost (${sym})`,
+      `Electric Cumulative Cost (${sym})`,
+      `Cost Saving Electric (${sym})`,
+      `Diesel Annual Revenue (${sym})`,
+      `Electric Annual Revenue (${sym})`,
+      `Diesel Annual Profit (${sym})`,
+      `Electric Annual Profit (${sym})`,
+      `Diesel Cumulative Profit (${sym})`,
+      `Electric Cumulative Profit (${sym})`,
+      `Cumulative Profit Advantage Electric (${sym})`,
+    ],
     ...result.years.map(r => [
-      `Y${r.year}`,
-      r.dieselAnnual.toFixed(0), r.electricAnnual.toFixed(0),
-      r.dieselCumulative.toFixed(0), r.electricCumulative.toFixed(0),
-      r.dieselProfit.toFixed(0), r.electricProfit.toFixed(0),
-      r.profitDelta.toFixed(0),
+      `Year ${r.year}`,
+      n(r.dieselAnnual), n(r.electricAnnual),
+      n(r.dieselCumulative), n(r.electricCumulative),
+      n(r.saving),
+      n(r.dieselRevenue), n(r.electricRevenue),
+      n(r.dieselProfit), n(r.electricProfit),
+      n(r.dieselCumProfit), n(r.electricCumProfit),
+      n(r.profitDelta),
     ]),
     [],
-    ["Diesel TCO", result.dieselTCO.toFixed(0)],
-    ["Electric TCO", result.electricTCO.toFixed(0)],
-    ["Diesel CPM", `${sym}${result.dieselCpm.toFixed(2)}/km`],
-    ["Electric CPM", `${sym}${result.electricCpm.toFixed(2)}/km`],
-    ["Lifetime Cost Difference", result.totalSaving.toFixed(0)],
-    ["Lifetime Profit Advantage (Electric)", result.totalProfitDelta.toFixed(0)],
+    // ── Section 5: TCO Summary ──
+    ["SECTION 5 — TOTAL COST OF OWNERSHIP SUMMARY (per truck)"],
+    ["Metric", "Diesel", "Electric", "Difference"],
+    ["Lifetime TCO", m(result.dieselTCO), m(result.electricTCO), m(result.totalSaving) + (result.totalSaving > 0 ? " electric saves" : " diesel saves")],
+    ["Cost per km (lifetime avg)", `${sym}${result.dieselCpm.toFixed(2)}/km`, `${sym}${result.electricCpm.toFixed(2)}/km`, `${sym}${Math.abs(result.dieselCpm - result.electricCpm).toFixed(2)}/km`],
+    ["Lifetime profit", m(result.dieselFinalCumProfit), m(result.electricFinalCumProfit), m(result.totalProfitDelta) + (result.totalProfitDelta > 0 ? " electric advantage" : " diesel advantage")],
+    ["TCO break-even year", result.breakEvenYear ? `Year ${result.breakEvenYear}` : "Not within vehicle life", "", ""],
+    ["Profit cross-over year", result.profitBreakEvenYear ? `Year ${result.profitBreakEvenYear}` : "Not within vehicle life", "", ""],
+    [],
+    // ── Section 6: Fleet totals ──
+    ...(fleetSize > 1 ? [
+      [`SECTION 6 — FLEET TOTALS (${fleetSize} trucks)`],
+      ["Metric", "Diesel Fleet", "Electric Fleet", "Difference"],
+      ["Fleet lifetime TCO", m(result.dieselTCO * fleetSize), m(result.electricTCO * fleetSize), m(result.totalSaving * fleetSize)],
+      ["Fleet lifetime profit", m(result.dieselFinalCumProfit * fleetSize), m(result.electricFinalCumProfit * fleetSize), m(result.totalProfitDelta * fleetSize)],
+      [],
+    ] : []),
+    // ── Section 7: CO2e ──
+    ["SECTION 7 — ENVIRONMENTAL IMPACT (GLEC STANDARD)"],
+    ["Metric", "Value", "Unit"],
+    ["GLEC emission factor used", "3.48", "kg CO2e per litre diesel (Well-to-Wheel)"],
+    ["Diesel litres avoided (lifetime, per truck)", n(result.dieselTotalLitres, 0), "litres"],
+    ["CO2e avoided (lifetime, per truck)", n(result.co2eTonnesAvoided, 1), "tonnes CO2e"],
+    ["CO2e avoided per year (average, per truck)", n(result.co2eTonnesAvoided / dLife, 1), "tonnes CO2e/year"],
+    ...(fleetSize > 1 ? [
+      [`CO2e avoided (lifetime, ${fleetSize} trucks)`, n(result.co2eTonnesAvoided * fleetSize, 1), "tonnes CO2e"],
+    ] : []),
+    ["Equivalent passenger cars off road (1 year)", n(result.co2eTonnesAvoided * fleetSize / 2.3, 0), "cars (avg 2.3 t CO2e/car/year)"],
+    [],
+    // ── Disclaimer ──
+    ["DISCLAIMER"],
+    ["This report is generated by the TAG Fleet Profit & TCO Calculator for indicative purposes only."],
+    ["All figures are based on the inputs provided and standard financial modelling assumptions."],
+    ["Actual results will vary. TAG recommends consulting a qualified fleet finance advisor before making capital investment decisions."],
+    ["CO2e calculations use the GLEC (Global Logistics Emissions Council) Well-to-Wheel emission factor for diesel."],
   ];
-  const csv = rows.map(r => r.join(",")).join("\n");
-  const blob = new Blob([csv], { type: "text/csv" });
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = url; a.download = "TAG-TCO-Calculator-v2.csv"; a.click();
+  a.href = url;
+  a.download = `TAG-TCO-Report-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
   URL.revokeObjectURL(url);
 }
 
-// ─── Soft Login Modal ─────────────────────────────────────────────────────────
+// ─── PDF Report Generator ─────────────────────────────────────────────────────
+async function generatePDFReport(
+  inputs: Inputs,
+  result: ReturnType<typeof calcTCO>,
+  currencyCode: string,
+  sym: string,
+  truckType: string,
+  useCase: string,
+  revenuePerKm: number,
+  fleetSize: number,
+  userName: string,
+  userCompany: string,
+  userCountry: string,
+) {
+  const { jsPDF } = await import("jspdf");
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const PW = 210; const PH = 297;
+  const ML = 18; const MR = 18; const MT = 20;
+  const CW = PW - ML - MR; // content width
+  let y = MT;
+
+  const dKm = inputs.decoupleKmLife ? inputs.dieselMonthlyKm : inputs.monthlyKm;
+  const eKm = inputs.decoupleKmLife ? inputs.electricMonthlyKm : inputs.monthlyKm;
+  const dLife = inputs.decoupleKmLife ? inputs.dieselVehicleLifeYears : inputs.vehicleLifeYears;
+  const eLife = inputs.decoupleKmLife ? inputs.electricVehicleLifeYears : inputs.vehicleLifeYears;
+  const m = (v: number) => `${sym}${new Intl.NumberFormat("en-ZA").format(Math.round(v))}`;
+  const reportDate = new Date().toLocaleDateString("en-ZA", { day: "2-digit", month: "long", year: "numeric" });
+
+  // ── Helpers ──
+  const checkPage = (needed = 10) => {
+    if (y + needed > PH - 18) {
+      doc.addPage();
+      y = MT;
+      drawFooter();
+    }
+  };
+  const drawFooter = () => {
+    const pg = doc.getNumberOfPages();
+    doc.setFontSize(7);
+    doc.setTextColor(120, 120, 120);
+    doc.text(`Transport Action Group  ·  www.transportactiongroup.co.za  ·  Fleet Profit & TCO Calculator`, ML, PH - 8);
+    doc.text(`Page ${pg}`, PW - MR, PH - 8, { align: "right" });
+    doc.setTextColor(30, 30, 30);
+  };
+  const sectionHeading = (title: string) => {
+    checkPage(14);
+    doc.setFillColor(15, 40, 60);
+    doc.roundedRect(ML, y, CW, 8, 1.5, 1.5, "F");
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(255, 255, 255);
+    doc.text(title, ML + 4, y + 5.5);
+    doc.setTextColor(30, 30, 30);
+    y += 11;
+  };
+  const row2 = (label: string, val1: string, val2 = "", val3 = "", isHeader = false) => {
+    checkPage(7);
+    const col = [ML, ML + CW * 0.45, ML + CW * 0.65, ML + CW * 0.85];
+    if (isHeader) {
+      doc.setFillColor(230, 240, 248);
+      doc.rect(ML, y, CW, 6, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7.5);
+    } else {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
+    }
+    doc.text(label, col[0] + 1, y + 4);
+    doc.text(val1, col[1], y + 4);
+    if (val2) doc.text(val2, col[2], y + 4);
+    if (val3) doc.text(val3, col[3], y + 4);
+    doc.setDrawColor(220, 220, 220);
+    doc.line(ML, y + 6, ML + CW, y + 6);
+    y += 6;
+  };
+  const kv = (label: string, value: string) => {
+    checkPage(6);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor(80, 80, 80);
+    doc.text(label, ML + 1, y + 4);
+    doc.setTextColor(30, 30, 30);
+    doc.setFont("helvetica", "bold");
+    doc.text(value, ML + CW * 0.5, y + 4);
+    doc.setFont("helvetica", "normal");
+    y += 6;
+  };
+
+  // ── Cover / Header ──
+  doc.setFillColor(10, 30, 50);
+  doc.rect(0, 0, PW, 42, "F");
+  doc.setFontSize(18);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(255, 255, 255);
+  doc.text("Fleet Profit & TCO Analysis Report", ML, 18);
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(180, 210, 240);
+  doc.text("Diesel vs Electric Truck — Lifetime Cost and Profitability Comparison", ML, 26);
+  doc.setTextColor(120, 160, 200);
+  doc.text(`Prepared by Transport Action Group  ·  ${reportDate}`, ML, 34);
+  doc.setTextColor(30, 30, 30);
+  y = 52;
+
+  // ── Report metadata ──
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  const meta = [
+    ["Prepared for", userName || "Fleet Operator"],
+    ["Company", userCompany || "—"],
+    ["Country", userCountry || "—"],
+    ["Currency", currencyCode],
+    ["Truck type", truckType || "N/A"],
+    ["Use case", useCase || "N/A"],
+    ["Fleet size", String(fleetSize)],
+  ];
+  const half = Math.ceil(meta.length / 2);
+  for (let i = 0; i < half; i++) {
+    const left = meta[i];
+    const right = meta[i + half];
+    doc.setTextColor(100, 100, 100); doc.text(left[0] + ":", ML, y + 4);
+    doc.setTextColor(30, 30, 30); doc.setFont("helvetica", "bold"); doc.text(left[1], ML + 30, y + 4);
+    if (right) {
+      doc.setFont("helvetica", "normal"); doc.setTextColor(100, 100, 100); doc.text(right[0] + ":", ML + CW / 2, y + 4);
+      doc.setTextColor(30, 30, 30); doc.setFont("helvetica", "bold"); doc.text(right[1], ML + CW / 2 + 30, y + 4);
+    }
+    doc.setFont("helvetica", "normal");
+    y += 6;
+  }
+  y += 6;
+  drawFooter();
+
+  // ── Section 1: Key Results Summary ──
+  sectionHeading("KEY RESULTS SUMMARY");
+  const highlight = (label: string, val: string, color: [number, number, number]) => {
+    checkPage(16);
+    doc.setFillColor(...color);
+    doc.roundedRect(ML, y, CW / 2 - 3, 14, 2, 2, "F");
+    doc.setFontSize(7); doc.setFont("helvetica", "normal"); doc.setTextColor(255, 255, 255);
+    doc.text(label, ML + 3, y + 5);
+    doc.setFontSize(13); doc.setFont("helvetica", "bold");
+    doc.text(val, ML + 3, y + 12);
+    doc.setTextColor(30, 30, 30);
+  };
+  highlight("Diesel Lifetime TCO (per truck)", m(result.dieselTCO), [180, 100, 20]);
+  highlight("Electric Lifetime TCO (per truck)", m(result.electricTCO), [20, 120, 60]);
+  y += 18;
+  highlight("Diesel Lifetime Profit (per truck)", m(result.dieselFinalCumProfit), [160, 80, 10]);
+  highlight("Electric Lifetime Profit (per truck)", m(result.electricFinalCumProfit), [10, 100, 50]);
+  y += 18;
+  // Profit advantage full-width
+  doc.setFillColor(result.totalProfitDelta > 0 ? 10 : 160, result.totalProfitDelta > 0 ? 100 : 60, result.totalProfitDelta > 0 ? 50 : 10);
+  doc.roundedRect(ML, y, CW, 14, 2, 2, "F");
+  doc.setFontSize(7); doc.setFont("helvetica", "normal"); doc.setTextColor(255, 255, 255);
+  doc.text(result.totalProfitDelta > 0 ? "Profit Advantage — Electric generates more profit" : "Profit Advantage — Diesel generates more profit", ML + 3, y + 5);
+  doc.setFontSize(13); doc.setFont("helvetica", "bold");
+  doc.text(`${m(Math.abs(result.totalProfitDelta))} extra lifetime profit${fleetSize > 1 ? ` (${m(Math.abs(result.totalProfitDelta) * fleetSize)} for ${fleetSize} trucks)` : ""}`, ML + 3, y + 12);
+  doc.setTextColor(30, 30, 30);
+  y += 20;
+
+  row2("Metric", "Diesel", "Electric", "Difference", true);
+  row2("Lifetime TCO (per truck)", m(result.dieselTCO), m(result.electricTCO), m(result.totalSaving) + (result.totalSaving > 0 ? " electric saves" : " diesel saves"));
+  row2("Cost per km (lifetime avg)", `${sym}${result.dieselCpm.toFixed(2)}/km`, `${sym}${result.electricCpm.toFixed(2)}/km`, `${sym}${Math.abs(result.dieselCpm - result.electricCpm).toFixed(2)}/km`);
+  row2("Lifetime profit (per truck)", m(result.dieselFinalCumProfit), m(result.electricFinalCumProfit), m(result.totalProfitDelta));
+  row2("TCO break-even year", result.breakEvenYear ? `Year ${result.breakEvenYear}` : "Not within life", "", "");
+  row2("Profit cross-over year", result.profitBreakEvenYear ? `Year ${result.profitBreakEvenYear}` : "Not within life", "", "");
+  if (fleetSize > 1) {
+    y += 3;
+    row2(`Fleet totals (${fleetSize} trucks)`, "Diesel Fleet", "Electric Fleet", "Difference", true);
+    row2("Fleet lifetime TCO", m(result.dieselTCO * fleetSize), m(result.electricTCO * fleetSize), m(result.totalSaving * fleetSize));
+    row2("Fleet lifetime profit", m(result.dieselFinalCumProfit * fleetSize), m(result.electricFinalCumProfit * fleetSize), m(result.totalProfitDelta * fleetSize));
+  }
+  y += 6;
+
+  // ── Section 2: Diesel Inputs ──
+  sectionHeading("SECTION 1 — DIESEL TRUCK INPUT PARAMETERS");
+  row2("Parameter", "Value", "Unit", "", true);
+  row2("Monthly kilometres", `${dKm.toLocaleString()} km/month`, "");
+  row2("Vehicle life", `${dLife} years`, "");
+  row2("Annual kilometres", `${(dKm * 12).toLocaleString()} km/year`, "");
+  row2("Purchase price", m(inputs.dieselPurchasePrice), "");
+  row2("Financed", inputs.dieselFinanced ? "Yes" : "No (cash purchase)", "");
+  if (inputs.dieselFinanced) {
+    row2("Deposit", `${inputs.dieselDepositPct}%  (${m(inputs.dieselPurchasePrice * inputs.dieselDepositPct / 100)})`, "");
+    row2("Finance rate / term", `${inputs.dieselFinanceRate}% p.a.`, `${inputs.dieselFinanceTerm} months`);
+  }
+  row2("Fuel consumption", `${inputs.dieselFuelConsumption} L/100km`, "");
+  row2("Diesel price (Year 1)", `${sym}${inputs.dieselFuelPrice.toFixed(2)}/litre`, "");
+  row2("Fuel price escalation", `${inputs.dieselFuelEscalation}% p.a.`, "");
+  row2("Maintenance", `${sym}${inputs.dieselMaintenanceCpm.toFixed(2)}/km`, "");
+  row2("Insurance (annual)", m(inputs.dieselInsuranceAnnual), "");
+  row2("Residual value", `${inputs.dieselResidualPct}%  (${m(inputs.dieselPurchasePrice * inputs.dieselResidualPct / 100)})`, "");
+  y += 4;
+
+  // ── Section 3: Electric Inputs ──
+  sectionHeading("SECTION 2 — ELECTRIC TRUCK INPUT PARAMETERS");
+  row2("Parameter", "Value", "Unit", "", true);
+  row2("Monthly kilometres", `${eKm.toLocaleString()} km/month`, "");
+  row2("Vehicle life", `${eLife} years`, "");
+  row2("Annual kilometres", `${(eKm * 12).toLocaleString()} km/year`, "");
+  row2("Purchase price", m(inputs.electricPurchasePrice), `(${((inputs.electricPurchasePrice / inputs.dieselPurchasePrice - 1) * 100).toFixed(0)}% premium over diesel)`);
+  row2("Financed", inputs.electricFinanced ? "Yes" : "No (cash purchase)", "");
+  if (inputs.electricFinanced) {
+    row2("Deposit", `${inputs.electricDepositPct}%  (${m(inputs.electricPurchasePrice * inputs.electricDepositPct / 100)})`, "");
+    row2("Finance rate / term", `${inputs.electricFinanceRate}% p.a.`, `${inputs.electricFinanceTerm} months`);
+  }
+  row2("Energy consumption", `${inputs.electricEnergyConsumption} kWh/100km`, "");
+  row2("Electricity tariff (Year 1)", `${sym}${inputs.electricEnergyPrice.toFixed(2)}/kWh`, "");
+  row2("Tariff escalation", `${inputs.electricEnergyEscalation}% p.a.`, "");
+  row2("Maintenance", `${sym}${inputs.electricMaintenanceCpm.toFixed(2)}/km`, `(saves ${sym}${(inputs.dieselMaintenanceCpm - inputs.electricMaintenanceCpm).toFixed(2)}/km vs diesel)`);
+  row2("Insurance (annual)", m(inputs.electricInsuranceAnnual), "");
+  row2("Residual value", `${inputs.electricResidualPct}%  (${m(inputs.electricPurchasePrice * inputs.electricResidualPct / 100)})`, "");
+  y += 4;
+
+  // ── Section 4: Revenue ──
+  sectionHeading("SECTION 3 — REVENUE AND PRICING ASSUMPTIONS");
+  row2("Parameter", "Value", "", "", true);
+  row2("Selling price per km (Year 1)", `${sym}${revenuePerKm.toFixed(2)}/km`, "");
+  row2("Revenue escalation", "5.00% p.a. (fixed)", "");
+  row2("Diesel margin (Year 1)", `${((revenuePerKm - result.dieselCpm) / revenuePerKm * 100).toFixed(1)}%`, "");
+  row2("Electric margin (Year 1)", `${((revenuePerKm - result.electricCpm) / revenuePerKm * 100).toFixed(1)}%`, "");
+  row2("Diesel cost per km (lifetime avg)", `${sym}${result.dieselCpm.toFixed(2)}/km`, "");
+  row2("Electric cost per km (lifetime avg)", `${sym}${result.electricCpm.toFixed(2)}/km`, "");
+  y += 4;
+
+  // ── Section 5: Year-by-Year ──
+  sectionHeading("SECTION 4 — YEAR-BY-YEAR ANALYSIS (per truck)");
+  // Narrow columns for the year table
+  const yc = [ML, ML+18, ML+18+22, ML+18+44, ML+18+66, ML+18+88, ML+18+110];
+  const yRow = (cells: string[], hdr = false) => {
+    checkPage(6);
+    if (hdr) { doc.setFillColor(230, 240, 248); doc.rect(ML, y, CW, 5.5, "F"); doc.setFont("helvetica", "bold"); }
+    else { doc.setFont("helvetica", "normal"); }
+    doc.setFontSize(6.5);
+    cells.forEach((c, i) => { if (yc[i] !== undefined) doc.text(c, yc[i] + 1, y + 4); });
+    doc.setDrawColor(220, 220, 220); doc.line(ML, y + 5.5, ML + CW, y + 5.5);
+    y += 5.5;
+  };
+  yRow(["Year", `D.Annual(${sym})`, `E.Annual(${sym})`, `D.CumCost(${sym})`, `E.CumCost(${sym})`, `D.Profit(${sym})`, `E.Profit(${sym})`], true);
+  result.years.forEach(r => {
+    yRow([
+      `Year ${r.year}`,
+      new Intl.NumberFormat("en-ZA").format(Math.round(r.dieselAnnual)),
+      new Intl.NumberFormat("en-ZA").format(Math.round(r.electricAnnual)),
+      new Intl.NumberFormat("en-ZA").format(Math.round(r.dieselCumulative)),
+      new Intl.NumberFormat("en-ZA").format(Math.round(r.electricCumulative)),
+      new Intl.NumberFormat("en-ZA").format(Math.round(r.dieselProfit)),
+      new Intl.NumberFormat("en-ZA").format(Math.round(r.electricProfit)),
+    ]);
+  });
+  y += 4;
+
+  // ── Section 6: CO2e ──
+  sectionHeading("SECTION 5 — ENVIRONMENTAL IMPACT (GLEC STANDARD)");
+  row2("Parameter", "Value", "", "", true);
+  row2("GLEC emission factor", "3.48 kg CO\u2082e per litre diesel (Well-to-Wheel)", "");
+  row2("Diesel litres avoided (lifetime, per truck)", `${new Intl.NumberFormat("en-ZA").format(Math.round(result.dieselTotalLitres))} litres`, "");
+  row2("CO\u2082e avoided (lifetime, per truck)", `${result.co2eTonnesAvoided.toFixed(1)} tonnes CO\u2082e`, "");
+  row2("CO\u2082e avoided per year (average)", `${(result.co2eTonnesAvoided / dLife).toFixed(1)} tonnes CO\u2082e/year`, "");
+  if (fleetSize > 1) row2(`CO\u2082e avoided (${fleetSize} trucks, lifetime)`, `${(result.co2eTonnesAvoided * fleetSize).toFixed(1)} tonnes CO\u2082e`, "");
+  row2("Equivalent passenger cars off road", `${(result.co2eTonnesAvoided * fleetSize / 2.3).toFixed(0)} cars for one year`, "(avg 2.3 t CO\u2082e/car/year)");
+  y += 6;
+
+  // ── Disclaimer ──
+  checkPage(20);
+  doc.setFontSize(7);
+  doc.setFont("helvetica", "italic");
+  doc.setTextColor(120, 120, 120);
+  const disc = "This report is generated by the TAG Fleet Profit & TCO Calculator for indicative purposes only. All figures are based on the inputs provided and standard financial modelling assumptions. Actual results will vary. TAG recommends consulting a qualified fleet finance advisor before making capital investment decisions. CO\u2082e calculations use the GLEC (Global Logistics Emissions Council) Well-to-Wheel emission factor for diesel.";
+  const lines = doc.splitTextToSize(disc, CW);
+  doc.text(lines, ML, y);
+  y += lines.length * 4;
+
+  // ── Save ──
+  doc.save(`TAG-TCO-Report-${new Date().toISOString().slice(0, 10)}.pdf`);
+}
+
+// ─── Soft Login Modal ───────────────────────────────────────────────────────────────
 function SoftLoginModalV2({ exportType, onSubmit, onClose }: {
   exportType: "csv" | "pdf";
   onSubmit: (info: UserInfo) => void;
@@ -692,9 +1098,17 @@ export default function TCOv2Client() {
     setLoginModal(null);
     await saveSubmission(userInfo, type!);
     if (type === "csv") {
-      exportCSVv2(inputs, finalResult, currencyCode, currency.symbol, truckType, useCase);
+      exportCSVv2(
+        inputs, finalResult, currencyCode, currency.symbol, truckType, useCase,
+        effectiveRevenuePerKm, marginPct, fleetSize,
+        userInfo.name, userInfo.company,
+      );
     } else {
-      window.print();
+      await generatePDFReport(
+        inputs, finalResult, currencyCode, currency.symbol, truckType, useCase,
+        effectiveRevenuePerKm, fleetSize,
+        userInfo.name, userInfo.company, userInfo.country,
+      );
     }
   };
 
