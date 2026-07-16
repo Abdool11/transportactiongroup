@@ -274,10 +274,17 @@ function calcTCO(inputs: Inputs, revenuePerKm: number) {
   const totalSaving = dieselTCO - electricTCO;
   const totalProfitDelta = electricCumProfit - dieselCumProfit;
 
+  // ── CO2e avoided (GLEC WtW factor: 3.48 kg CO2e per litre diesel) ──
+  // Total diesel litres that would have been consumed by a diesel truck over its life
+  const dieselTotalLitres = (dieselTotalKm / 100) * inputs.dieselFuelConsumption;
+  // CO2e avoided = total diesel litres × 3.48 kg CO2e/L (converted to tonnes)
+  const co2eTonnesAvoided = (dieselTotalLitres * 3.48) / 1000;
+
   return {
     years, dieselTCO, electricTCO, dieselCpm, electricCpm,
     totalSaving, breakEvenYear, totalProfitDelta, profitBreakEvenYear,
     dieselFinalCumProfit: dieselCumProfit, electricFinalCumProfit: electricCumProfit,
+    dieselTotalLitres, co2eTonnesAvoided,
   };
 }
 
@@ -1157,7 +1164,52 @@ export default function TCOv2Client() {
         {/* SECTION 4 removed — input table moved above revenue card */}
 
         {/* ══════════════════════════════════════════════════════════════════
-            SECTION 4b: SENSITIVITY ANALYSIS CTA
+            SECTION 4b: CO2e AVOIDED CARD (GLEC standard)
+        ══════════════════════════════════════════════════════════════════ */}
+        <div className="card p-5 border border-emerald-500/20 bg-emerald-500/5">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-lg">🌿</span>
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-emerald-400">CO₂e Avoided per Electric Truck</h3>
+            </div>
+            <span className="text-xs text-muted-foreground shrink-0">GLEC WtW standard · 3.48 kg CO₂e/L diesel</span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">CO₂e avoided (lifetime)</p>
+              <p className="text-2xl font-extrabold text-emerald-400">{(finalResult.co2eTonnesAvoided * fleetSize).toFixed(1)} t</p>
+              {fleetSize > 1 && <p className="text-xs text-muted-foreground">{fleetSize} trucks · {finalResult.co2eTonnesAvoided.toFixed(1)} t/truck</p>}
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Per year (average)</p>
+              <p className="text-xl font-bold text-emerald-300">
+                {(finalResult.co2eTonnesAvoided / inputs.vehicleLifeYears * fleetSize).toFixed(1)} t
+              </p>
+              <p className="text-xs text-muted-foreground">per year</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Diesel litres avoided</p>
+              <p className="text-xl font-bold text-white">
+                {(finalResult.dieselTotalLitres * fleetSize / 1000).toFixed(0)}K L
+              </p>
+              <p className="text-xs text-muted-foreground">lifetime total</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Equivalent to</p>
+              <p className="text-sm font-semibold text-white">
+                {(finalResult.co2eTonnesAvoided * fleetSize / 2.3).toFixed(0)} cars off road
+              </p>
+              <p className="text-xs text-muted-foreground">for one year (avg 2.3 t/car/yr)</p>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-emerald-500/10">
+            Calculated using the GLEC (Global Logistics Emissions Council) Well-to-Wheel emission factor for diesel: 3.48 kg CO₂e per litre.
+            Assumes the electric truck displaces an equivalent diesel truck over the full vehicle lifetime.
+          </p>
+        </div>
+
+        {/* ══════════════════════════════════════════════════════════════════
+            SECTION 4c: SENSITIVITY ANALYSIS CTA
         ══════════════════════════════════════════════════════════════════ */}
         <div className="card p-5 flex flex-col sm:flex-row items-center justify-between gap-4 border border-amber-500/20 bg-amber-500/5">
           <div>
