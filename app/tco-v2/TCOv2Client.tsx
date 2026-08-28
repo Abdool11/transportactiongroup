@@ -569,7 +569,12 @@ function convertDefaults(d: Inputs, rate: number): Inputs {
     "electricPurchasePrice", "electricEnergyPrice", "electricMaintenanceCpm", "electricInsuranceAnnual",
   ] as const;
   const out = { ...d };
-  for (const f of priceFields) (out as Record<string, number>)[f] = Math.round((d as Record<string, number>)[f] * rate);
+  for (const f of priceFields) {
+    // Preserve usable minor-unit values for rates and tariffs (for example,
+    // an electricity price below one USD) while keeping large truck prices clean.
+    const converted = (d as Record<string, number>)[f] * rate;
+    (out as Record<string, number>)[f] = Math.round(converted * 100) / 100;
+  }
   return out;
 }
 
@@ -713,32 +718,62 @@ const ZAR_DEFAULTS: Inputs = {
 interface SliderConfig {
   label: string;
   field: keyof Inputs;
+  // ZAR baseline values; currency-scaled controls derive their range from the
+  // active currency and widen automatically when a user enters an outlier value.
   min: number; max: number; step: number;
+  currencyScaled?: boolean;
   format: (v: number, sym: string) => string;
 }
 const DIESEL_SLIDERS: SliderConfig[] = [
   { label: "Monthly km", field: "monthlyKm", min: 1000, max: 50000, step: 500, format: (v) => `${v.toLocaleString()} km` },
   { label: "Vehicle life", field: "vehicleLifeYears", min: 3, max: 15, step: 1, format: (v) => `${v} yrs` },
-  { label: "Vehicle price", field: "dieselPurchasePrice", min: 500000, max: 10000000, step: 50000, format: (v, s) => `${s}${(v / 1_000_000).toFixed(1)}M` },
+  { label: "Vehicle price", field: "dieselPurchasePrice", min: 500000, max: 10000000, step: 50000, currencyScaled: true, format: (v, s) => `${s}${(v / 1_000_000).toFixed(1)}M` },
   { label: "Finance rate", field: "dieselFinanceRate", min: 0, max: 30, step: 0.25, format: (v) => `${v}%` },
-  { label: "Diesel price", field: "dieselFuelPrice", min: 5, max: 100, step: 0.5, format: (v, s) => `${s}${v.toFixed(1)}/L` },
+  { label: "Diesel price", field: "dieselFuelPrice", min: 5, max: 100, step: 0.5, currencyScaled: true, format: (v, s) => `${s}${v.toFixed(1)}/L` },
 ];
 const ELECTRIC_SLIDERS: SliderConfig[] = [
   { label: "Monthly km", field: "monthlyKm", min: 1000, max: 50000, step: 500, format: (v) => `${v.toLocaleString()} km` },
   { label: "Vehicle life", field: "vehicleLifeYears", min: 3, max: 15, step: 1, format: (v) => `${v} yrs` },
-  { label: "Vehicle price", field: "electricPurchasePrice", min: 1000000, max: 20000000, step: 100000, format: (v, s) => `${s}${(v / 1_000_000).toFixed(1)}M` },
+  { label: "Vehicle price", field: "electricPurchasePrice", min: 1000000, max: 20000000, step: 100000, currencyScaled: true, format: (v, s) => `${s}${(v / 1_000_000).toFixed(1)}M` },
   { label: "Finance rate", field: "electricFinanceRate", min: 0, max: 30, step: 0.25, format: (v) => `${v}%` },
-  { label: "Electricity tariff", field: "electricEnergyPrice", min: 0.5, max: 20, step: 0.1, format: (v, s) => `${s}${v.toFixed(1)}/kWh` },
+  { label: "Electricity tariff", field: "electricEnergyPrice", min: 0.5, max: 20, step: 0.1, currencyScaled: true, format: (v, s) => `${s}${v.toFixed(1)}/kWh` },
 ];
 
+interface SliderBounds { min: number; max: number; step: number; }
+
+function smartSliderStep(range: number, fallback: number): number {
+  if (!Number.isFinite(range) || range <= 0) return fallback;
+  const targetStep = range / 96;
+  const magnitude = Math.pow(10, Math.floor(Math.log10(targetStep)));
+  const normalized = targetStep / magnitude;
+  const rounded = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+  return rounded * magnitude;
+}
+
+function getSliderBounds(config: SliderConfig, value: number, currencyRate: number): SliderBounds {
+  if (!config.currencyScaled) return { min: config.min, max: config.max, step: config.step };
+
+  // Translate the original ZAR range to the chosen currency. If the operator
+  // types an unusual local price, expand the visible range around that value
+  // rather than pinning the slider to an arbitrary Rand-oriented ceiling.
+  const baselineMin = Math.max(0, config.min * currencyRate);
+  const baselineMax = Math.max(baselineMin + Number.EPSILON, config.max * currencyRate);
+  const baselineSpan = baselineMax - baselineMin;
+  const safeValue = Number.isFinite(value) ? Math.max(0, value) : baselineMin;
+  const min = Math.max(0, Math.min(baselineMin, safeValue - baselineSpan * 0.25));
+  const max = Math.max(baselineMax, safeValue * 1.75, min + baselineSpan);
+  return { min, max, step: smartSliderStep(max - min, config.step * currencyRate) };
+}
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
-function MixerSlider({ config, value, onChange, currencySymbol, accentColor }: {
+function MixerSlider({ config, value, onChange, currencySymbol, currencyRate, accentColor }: {
   config: SliderConfig; value: number; onChange: (v: number) => void;
-  currencySymbol: string; accentColor: "amber" | "green";
+  currencySymbol: string; currencyRate: number; accentColor: "amber" | "green";
 }) {
   const trackColor = accentColor === "amber" ? "#f59e0b" : "#22c55e";
   const thumbBg = accentColor === "amber" ? "bg-amber-400" : "bg-green-400";
-  const pct = ((value - config.min) / (config.max - config.min)) * 100;
+  const bounds = getSliderBounds(config, value, currencyRate);
+  const pct = Math.max(0, Math.min(100, ((value - bounds.min) / (bounds.max - bounds.min)) * 100));
   return (
     <div className="flex items-center gap-2 py-1">
       <span className="text-xs text-muted-foreground w-20 flex-shrink-0 truncate">{config.label}</span>
@@ -757,7 +792,7 @@ function MixerSlider({ config, value, onChange, currencySymbol, accentColor }: {
         />
         {/* Invisible range input on top */}
         <input
-          type="range" min={config.min} max={config.max} step={config.step} value={value}
+          type="range" min={bounds.min} max={bounds.max} step={bounds.step} value={value}
           onChange={e => onChange(Number(e.target.value))}
           className="absolute inset-0 w-full opacity-0 cursor-grab active:cursor-grabbing"
           style={{ height: "100%" }}
@@ -782,7 +817,6 @@ function InputRow({ label, value, onChange, suffix, min, max, step, isCurrency }
     <div className="flex items-center justify-between py-1.5 border-b border-border/20 last:border-0">
       <span className="text-xs text-muted-foreground">{label}</span>
       <div className="flex items-center gap-1">
-        {isCurrency && !focused && <span className="text-xs text-muted-foreground">R</span>}
         <input
           type={focused ? "number" : "text"}
           value={displayValue}
@@ -1400,7 +1434,7 @@ export default function TCOv2Client() {
               Profit Optimiser
             </h2>
             <span className="text-xs text-muted-foreground/60 italic flex items-center gap-1">
-              <span>↔</span> drag sliders to optimise
+              <span>↔</span> auto-scales to your currency and inputs
             </span>
           </div>
           <div className="grid grid-cols-2 gap-0 divide-x divide-border/30">
@@ -1415,6 +1449,7 @@ export default function TCOv2Client() {
                     value={inputs[cfg.field] as number}
                     onChange={set(cfg.field) as (v: number) => void}
                     currencySymbol={currency.symbol}
+                    currencyRate={currency.rate}
                     accentColor="amber"
                   />
                 ))}
@@ -1431,6 +1466,7 @@ export default function TCOv2Client() {
                     value={inputs[cfg.field] as number}
                     onChange={set(cfg.field) as (v: number) => void}
                     currencySymbol={currency.symbol}
+                    currencyRate={currency.rate}
                     accentColor="green"
                   />
                 ))}
