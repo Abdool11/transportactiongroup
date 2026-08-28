@@ -27,6 +27,7 @@ app/                    # Next.js App Router pages and API routes
   api/                  # Backend API routes
   admin/                # Admin dashboard (JWT protected)
   tco-calculator/       # TCO Calculator with Daily Energy panel
+  tco-v2/               # Fleet Profit & TCO calculator with multi-currency scenario controls
   green-freight/        # Green Freight content pages
   electric-truck/       # Electric Truck content pages
   academy/              # Academy and training pages
@@ -145,10 +146,17 @@ The site will be live with the new changes within 1–2 minutes of running `pm2 
 
 ---
 
+## TCO V2 Calculator
+
+The `/tco-v2` Fleet Profit & TCO Calculator supports a selectable operating currency and displays the active currency symbol/code rather than a fixed Rand label. Its vehicle-price, fuel-price and electricity-tariff optimiser controls translate the baseline range to the active currency and automatically widen around an operator-entered scenario value. This keeps the sliders practical for currencies with materially different units of account while preserving the underlying calculation method.
+
+---
+
 ## Recent Changes
 
 | Date | Branch | Summary |
 | :--- | :--- | :--- |
+| 2026-08-28 | `feature/tco-currency-responsive-controls` | Removed the embedded Rand UI prefix in TCO V2 and made currency-sensitive optimiser sliders auto-scale to the selected currency and entered scenario value. |
 | 2026-04-29 | `feature/ui-updates-homepage-tco-electric-truck` | Hero text split into two lines, bragging line brought into view, Electric Truck badge removed, Electric Trucks page renamed to Africa, TCO title/subtitle updated, TCO layout reordered (inputs → Daily Energy → Optional Considerations), default values synced, new logo, Partner with TAG button resized |
 | 2026-04-29 | `fix/nginx-static-assets-and-setup-docs` | Fixed nginx.conf to include `/_next/static/` block (critical for CSS serving), added FIRST-TIME-SETUP.md |
 | 2026-04-29 | `docs` | Added README, CONTRIBUTING guide, PR template |
