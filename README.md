@@ -152,12 +152,15 @@ The `/tco-v2` Fleet Profit & TCO Calculator provides a prominent **Currency Sele
 
 The vehicle-price, fuel-price, and electricity-tariff Profit Optimiser controls translate their ZAR baseline ranges to the active currency, use practical rounded slider steps, and automatically widen around an operator-entered scenario value. This keeps the controls practical for currencies with materially different units of account while preserving the underlying calculation method.
 
+The cumulative TCO and cumulative-profit charts also state the calculated lifetime outcome in plain language. The TCO card identifies the cheaper truck type from the final lifetime cost difference, while the profit card identifies the truck type that generates more lifetime profit. Both card annotations switch automatically between diesel and electric when the user changes the scenario, so the summary cannot incorrectly label an unfavourable electric scenario as an electric advantage.
+
 ---
 
 ## Recent Changes
 
 | Date | Branch | Summary |
 | :--- | :--- | :--- |
+| 2026-10-13 | `feature/tco-profitability-annotations` | Corrected the cumulative TCO and profit chart annotations to name the actual cost and profit winner, including diesel-favourable scenarios. |
 | 2026-09-21 | `feature/tco-currency-ux-preview` | Added the concise Currency Selection and Download TCO Results panel, currency-aware monetary symbols and report context, scenario-preserving currency conversion, and recalibrated Profit Optimiser ranges for all existing currencies. |
 | 2026-08-28 | `feature/tco-currency-responsive-controls` | Removed the embedded Rand UI prefix in TCO V2 and made currency-sensitive optimiser sliders auto-scale to the selected currency and entered scenario value. |
 | 2026-04-29 | `feature/ui-updates-homepage-tco-electric-truck` | Hero text split into two lines, bragging line brought into view, Electric Truck badge removed, Electric Trucks page renamed to Africa, TCO title/subtitle updated, TCO layout reordered (inputs → Daily Energy → Optional Considerations), default values synced, new logo, Partner with TAG button resized |

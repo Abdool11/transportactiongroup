@@ -1207,6 +1207,16 @@ export default function TCOv2Client() {
   const fmt = (n: number) => formatMoney(n, currency);
   const fmtShort = (n: number) => formatMoneyShort(n, currency);
   const fmtCpm = (n: number) => `${formatMoney(n, currency, 2)}/km`;
+  const costOutcome = finalResult.totalSaving === 0
+    ? { winner: "Same lifetime cost", detail: "Both options have the same lifetime TCO", color: "text-primary" }
+    : finalResult.totalSaving > 0
+      ? { winner: "Electric is cheaper", detail: `${fmtShort(Math.abs(finalResult.totalSaving))} lower lifetime cost`, color: "text-green-400" }
+      : { winner: "Diesel is cheaper", detail: `${fmtShort(Math.abs(finalResult.totalSaving))} lower lifetime cost`, color: "text-amber-400" };
+  const profitOutcome = finalResult.totalProfitDelta === 0
+    ? { winner: "Same lifetime profit", detail: "Both options generate the same lifetime profit", color: "text-primary" }
+    : finalResult.totalProfitDelta > 0
+      ? { winner: "Electric generates more profit", detail: `${fmtShort(Math.abs(finalResult.totalProfitDelta))} more lifetime profit`, color: "text-green-400" }
+      : { winner: "Diesel generates more profit", detail: `${fmtShort(Math.abs(finalResult.totalProfitDelta))} more lifetime profit`, color: "text-amber-400" };
 
   // Chart data
   const tcoChartData = finalResult.years.map(r => ({
@@ -1423,13 +1433,12 @@ export default function TCOv2Client() {
             <div className="flex items-start justify-between mb-1">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Cumulative Cost (TCO)</h3>
               <div className="text-right">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">Lifetime Cost Difference</p>
-                <p className={`text-sm font-bold ${finalResult.totalSaving > 0 ? 'text-green-400' : 'text-amber-400'}`}>
-                  {finalResult.totalSaving > 0 ? '−' : '+'}{fmtShort(Math.abs(finalResult.totalSaving))} electric saves
-                </p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">Lifetime Cost Outcome</p>
+                <p className={`text-sm font-bold ${costOutcome.color}`}>{costOutcome.winner}</p>
+                <p className={`text-xs ${costOutcome.color}`}>{costOutcome.detail}</p>
               </div>
             </div>
-            <p className="text-xs text-muted-foreground mb-3">Total accumulated cost including purchase and operating costs.</p>
+            <p className="text-xs text-muted-foreground mb-3">Lower curve = lower lifetime cost. The callout names the cheaper option.</p>
             <ResponsiveContainer width="100%" height={160}>
               <LineChart data={tcoChartData} margin={{ top: 4, right: 64, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -1450,13 +1459,12 @@ export default function TCOv2Client() {
             <div className="flex items-start justify-between mb-1">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Cumulative Profit</h3>
               <div className="text-right">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">Lifetime Profit Difference</p>
-                <p className={`text-sm font-bold ${finalResult.totalProfitDelta > 0 ? 'text-green-400' : 'text-amber-400'}`}>
-                  {finalResult.totalProfitDelta > 0 ? '+' : ''}{fmtShort(finalResult.totalProfitDelta)} electric advantage
-                </p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">Lifetime Profit Outcome</p>
+                <p className={`text-sm font-bold ${profitOutcome.color}`}>{profitOutcome.winner}</p>
+                <p className={`text-xs ${profitOutcome.color}`}>{profitOutcome.detail}</p>
               </div>
             </div>
-            <p className="text-xs text-muted-foreground mb-3">Total profit generated per truck after all costs, at your revenue rate.</p>
+            <p className="text-xs text-muted-foreground mb-3">Higher curve = more lifetime profit. The callout names the stronger option.</p>
             <ResponsiveContainer width="100%" height={160}>
               <LineChart data={profitChartData} margin={{ top: 4, right: 64, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />

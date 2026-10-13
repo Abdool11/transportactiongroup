@@ -1,25 +1,30 @@
-# TAG TCO Currency Preview Validation
+# TAG TCO Calculator Validation
 
 ## Scope
 
-This isolated preview uses branch `feature/tco-currency-ux-preview`, based on `origin/feature/tco-currency-responsive-controls`.
+This isolated preview uses branch `feature/tco-profitability-annotations`, restored from the verified currency-UX checkpoint and based on `feature/tco-currency-ux-preview`.
 
-## Visual validation
+## Currency and export interface
 
-The TCO calculator opens with a single, clearly structured tools panel above the calculator inputs. Its two concise headings are **Currency Selection** and **Download TCO Results**. The currency selector and the PDF/CSV export actions remain immediately visible, while the former decorative icons and explanatory subtitles have been removed.
+The calculator opens with the concise **Currency Selection** and **Download TCO Results** panel. The existing seven currencies—ZAR, USD, EUR, KES, TZS, ETB, and GBP—remain available. Monetary inputs, charts, summaries, Profit Optimiser labels, and exported PDF/CSV context use the active currency. A USD-to-ZAR round trip retains the underlying scenario through six-decimal conversion precision.
 
-The currency menu retains all seven existing options: ZAR, USD, EUR, KES, TZS, ETB, and GBP. PDF and CSV export actions use the currently selected display currency.
+## Cumulative chart outcome annotations
 
-## Currency behaviour validation
+The cumulative TCO card now explains that the lower curve is cheaper and uses its calculated lifetime outcome to name the actual cheaper option. The cumulative-profit card explains that the higher curve produces more profit and names the actual lifetime profit winner.
 
-Selecting USD changes the active control to `US$ · USD`. The editable monetary labels change to `US$`, including vehicle price, fuel, electricity, maintenance, and insurance. Charts, summary values, cost-per-kilometre values, the Profit Optimiser, and export context also change to `US$`.
+Two browser scenarios were verified on 13 October 2026:
 
-A USD-to-ZAR round trip returns the visible default ZAR input values and summary view. The implementation keeps conversion precision to six decimal places internally to prevent scenario drift caused solely by display rounding.
+| Scenario | Verified TCO annotation | Verified profit annotation |
+|---|---|---|
+| Default inputs | **Electric is cheaper** | **Electric generates more profit** |
+| Electric purchase price changed to R20,000,000 | **Diesel is cheaper** | **Diesel generates more profit** |
+
+The annotations show the absolute monetary difference without a misleading plus or minus sign. They switch automatically according to `totalSaving` and `totalProfitDelta`.
 
 ## Build and type validation
 
-`npm run build` completed successfully on 21 September 2026. `npm run type-check` reports three pre-existing errors in `app/page.tsx` relating to `seatsBooked`, `drivers`, and `certifications`; it reports no error in `app/tco-v2/TCOv2Client.tsx`.
+`npm run build` completed successfully on 13 October 2026. `npm run type-check` still reports three pre-existing homepage errors in `app/page.tsx` relating to `seatsBooked`, `drivers`, and `certifications`; it reports no error in `app/tco-v2/TCOv2Client.tsx`.
 
 ## Preview URL
 
-https://3000-iczzsrbi0r5ccqtg5ww80-b403b374.us1.manus.computer/tco-v2
+https://3003-ivnalw212q1019zu5pdkp-051cdf75.us1.manus.computer/tco-v2
