@@ -547,14 +547,24 @@ interface YearResult {
 }
 
 // ─── Currencies ───────────────────────────────────────────────────────────────
-const CURRENCIES = [
-  { code: "ZAR", symbol: "R", name: "South African Rand", rate: 1 },
-  { code: "USD", symbol: "$", name: "US Dollar", rate: 0.054 },
-  { code: "EUR", symbol: "€", name: "Euro", rate: 0.050 },
-  { code: "KES", symbol: "KSh", name: "Kenyan Shilling", rate: 7.1 },
-  { code: "TZS", symbol: "TSh", name: "Tanzanian Shilling", rate: 138 },
-  { code: "ETB", symbol: "Br", name: "Ethiopian Birr", rate: 3.0 },
-  { code: "GBP", symbol: "£", name: "British Pound", rate: 0.043 },
+interface Currency {
+  code: string;
+  symbol: string;
+  name: string;
+  locale: string;
+  // Display-currency units per 1 ZAR. Inputs are stored in the active display
+  // currency, then translated by this rate when the visitor changes currency.
+  rate: number;
+}
+
+const CURRENCIES: Currency[] = [
+  { code: "ZAR", symbol: "R", name: "South African Rand", locale: "en-ZA", rate: 1 },
+  { code: "USD", symbol: "US$", name: "US Dollar", locale: "en-US", rate: 0.054 },
+  { code: "EUR", symbol: "€", name: "Euro", locale: "de-DE", rate: 0.050 },
+  { code: "KES", symbol: "KSh", name: "Kenyan Shilling", locale: "en-KE", rate: 7.1 },
+  { code: "TZS", symbol: "TSh", name: "Tanzanian Shilling", locale: "sw-TZ", rate: 138 },
+  { code: "ETB", symbol: "Br", name: "Ethiopian Birr", locale: "am-ET", rate: 3.0 },
+  { code: "GBP", symbol: "£", name: "British Pound", locale: "en-GB", rate: 0.043 },
 ];
 const COUNTRY_CURRENCY: Record<string, string> = {
   ZA: "ZAR", US: "USD", GB: "GBP", KE: "KES", TZ: "TZS", ET: "ETB",
@@ -563,14 +573,42 @@ const COUNTRY_CURRENCY: Record<string, string> = {
 function getCurrency(code: string) {
   return CURRENCIES.find(c => c.code === code) ?? CURRENCIES[0];
 }
-function convertDefaults(d: Inputs, rate: number): Inputs {
-  const priceFields = [
-    "dieselPurchasePrice", "dieselFuelPrice", "dieselMaintenanceCpm", "dieselInsuranceAnnual",
-    "electricPurchasePrice", "electricEnergyPrice", "electricMaintenanceCpm", "electricInsuranceAnnual",
-  ] as const;
+const MONETARY_INPUT_FIELDS = [
+  "dieselPurchasePrice", "dieselFuelPrice", "dieselMaintenanceCpm", "dieselInsuranceAnnual",
+  "electricPurchasePrice", "electricEnergyPrice", "electricMaintenanceCpm", "electricInsuranceAnnual",
+] as const;
+
+function scaleMonetaryInputs(d: Inputs, multiplier: number): Inputs {
   const out = { ...d };
-  for (const f of priceFields) (out as Record<string, number>)[f] = Math.round((d as Record<string, number>)[f] * rate);
+  for (const f of MONETARY_INPUT_FIELDS) {
+    // Keep enough internal precision for tariffs and cost-per-km values so a
+    // round-trip from ZAR to another currency and back does not change the
+    // underlying scenario merely because a display value was rounded.
+    const converted = d[f] * multiplier;
+    out[f] = Math.round(converted * 1_000_000) / 1_000_000;
+  }
   return out;
+}
+
+function convertDefaults(d: Inputs, rate: number): Inputs {
+  return scaleMonetaryInputs(d, rate);
+}
+
+function formatMoney(value: number, currency: Currency, maximumFractionDigits = 0): string {
+  const sign = value < 0 ? "−" : "";
+  const number = new Intl.NumberFormat(currency.locale, {
+    maximumFractionDigits,
+    minimumFractionDigits: maximumFractionDigits,
+  }).format(Math.abs(value));
+  return `${sign}${currency.symbol}${number}`;
+}
+
+function formatMoneyShort(value: number, currency: Currency): string {
+  const sign = value < 0 ? "−" : "";
+  const abs = Math.abs(value);
+  if (abs >= 1_000_000) return `${sign}${currency.symbol}${(abs / 1_000_000).toFixed(1)}M`;
+  if (abs >= 1_000) return `${sign}${currency.symbol}${(abs / 1_000).toFixed(0)}K`;
+  return formatMoney(value, currency);
 }
 
 // ─── Finance helpers ──────────────────────────────────────────────────────────
@@ -713,32 +751,62 @@ const ZAR_DEFAULTS: Inputs = {
 interface SliderConfig {
   label: string;
   field: keyof Inputs;
+  // ZAR baseline values; currency-scaled controls derive their range from the
+  // active currency and widen automatically when a user enters an outlier value.
   min: number; max: number; step: number;
-  format: (v: number, sym: string) => string;
+  currencyScaled?: boolean;
+  format: (v: number, currency: Currency) => string;
 }
 const DIESEL_SLIDERS: SliderConfig[] = [
   { label: "Monthly km", field: "monthlyKm", min: 1000, max: 50000, step: 500, format: (v) => `${v.toLocaleString()} km` },
   { label: "Vehicle life", field: "vehicleLifeYears", min: 3, max: 15, step: 1, format: (v) => `${v} yrs` },
-  { label: "Vehicle price", field: "dieselPurchasePrice", min: 500000, max: 10000000, step: 50000, format: (v, s) => `${s}${(v / 1_000_000).toFixed(1)}M` },
+  { label: "Vehicle price", field: "dieselPurchasePrice", min: 500000, max: 10000000, step: 50000, currencyScaled: true, format: (v, c) => formatMoneyShort(v, c) },
   { label: "Finance rate", field: "dieselFinanceRate", min: 0, max: 30, step: 0.25, format: (v) => `${v}%` },
-  { label: "Diesel price", field: "dieselFuelPrice", min: 5, max: 100, step: 0.5, format: (v, s) => `${s}${v.toFixed(1)}/L` },
+  { label: "Diesel price", field: "dieselFuelPrice", min: 5, max: 100, step: 0.5, currencyScaled: true, format: (v, c) => `${formatMoney(v, c, 2)}/L` },
 ];
 const ELECTRIC_SLIDERS: SliderConfig[] = [
   { label: "Monthly km", field: "monthlyKm", min: 1000, max: 50000, step: 500, format: (v) => `${v.toLocaleString()} km` },
   { label: "Vehicle life", field: "vehicleLifeYears", min: 3, max: 15, step: 1, format: (v) => `${v} yrs` },
-  { label: "Vehicle price", field: "electricPurchasePrice", min: 1000000, max: 20000000, step: 100000, format: (v, s) => `${s}${(v / 1_000_000).toFixed(1)}M` },
+  { label: "Vehicle price", field: "electricPurchasePrice", min: 1000000, max: 20000000, step: 100000, currencyScaled: true, format: (v, c) => formatMoneyShort(v, c) },
   { label: "Finance rate", field: "electricFinanceRate", min: 0, max: 30, step: 0.25, format: (v) => `${v}%` },
-  { label: "Electricity tariff", field: "electricEnergyPrice", min: 0.5, max: 20, step: 0.1, format: (v, s) => `${s}${v.toFixed(1)}/kWh` },
+  { label: "Electricity tariff", field: "electricEnergyPrice", min: 0.5, max: 20, step: 0.1, currencyScaled: true, format: (v, c) => `${formatMoney(v, c, 2)}/kWh` },
 ];
 
+interface SliderBounds { min: number; max: number; step: number; }
+
+function smartSliderStep(range: number, fallback: number): number {
+  if (!Number.isFinite(range) || range <= 0) return fallback;
+  const targetStep = range / 96;
+  const magnitude = Math.pow(10, Math.floor(Math.log10(targetStep)));
+  const normalized = targetStep / magnitude;
+  const rounded = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+  return rounded * magnitude;
+}
+
+function getSliderBounds(config: SliderConfig, value: number, currencyRate: number): SliderBounds {
+  if (!config.currencyScaled) return { min: config.min, max: config.max, step: config.step };
+
+  // Translate the original ZAR range to the chosen currency. If the operator
+  // types an unusual local price, expand the visible range around that value
+  // rather than pinning the slider to an arbitrary Rand-oriented ceiling.
+  const baselineMin = Math.max(0, config.min * currencyRate);
+  const baselineMax = Math.max(baselineMin + Number.EPSILON, config.max * currencyRate);
+  const baselineSpan = baselineMax - baselineMin;
+  const safeValue = Number.isFinite(value) ? Math.max(0, value) : baselineMin;
+  const min = Math.max(0, Math.min(baselineMin, safeValue - baselineSpan * 0.25));
+  const max = Math.max(baselineMax, safeValue * 1.75, min + baselineSpan);
+  return { min, max, step: smartSliderStep(max - min, config.step * currencyRate) };
+}
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
-function MixerSlider({ config, value, onChange, currencySymbol, accentColor }: {
+function MixerSlider({ config, value, onChange, currency, accentColor }: {
   config: SliderConfig; value: number; onChange: (v: number) => void;
-  currencySymbol: string; accentColor: "amber" | "green";
+  currency: Currency; accentColor: "amber" | "green";
 }) {
   const trackColor = accentColor === "amber" ? "#f59e0b" : "#22c55e";
   const thumbBg = accentColor === "amber" ? "bg-amber-400" : "bg-green-400";
-  const pct = ((value - config.min) / (config.max - config.min)) * 100;
+  const bounds = getSliderBounds(config, value, currency.rate);
+  const pct = Math.max(0, Math.min(100, ((value - bounds.min) / (bounds.max - bounds.min)) * 100));
   return (
     <div className="flex items-center gap-2 py-1">
       <span className="text-xs text-muted-foreground w-20 flex-shrink-0 truncate">{config.label}</span>
@@ -757,32 +825,32 @@ function MixerSlider({ config, value, onChange, currencySymbol, accentColor }: {
         />
         {/* Invisible range input on top */}
         <input
-          type="range" min={config.min} max={config.max} step={config.step} value={value}
+          type="range" min={bounds.min} max={bounds.max} step={bounds.step} value={value}
           onChange={e => onChange(Number(e.target.value))}
           className="absolute inset-0 w-full opacity-0 cursor-grab active:cursor-grabbing"
           style={{ height: "100%" }}
         />
       </div>
       <span className="text-xs font-mono font-medium w-20 text-right flex-shrink-0">
-        {config.format(value, currencySymbol)}
+        {config.format(value, currency)}
       </span>
     </div>
   );
 }
 
-function InputRow({ label, value, onChange, suffix, min, max, step, isCurrency }: {
+function InputRow({ label, value, onChange, suffix, min, max, step, isCurrency, currency }: {
   label: string; value: number; onChange: (v: number) => void;
-  suffix?: string; min?: number; max?: number; step?: number; isCurrency?: boolean;
+  suffix?: string; min?: number; max?: number; step?: number; isCurrency?: boolean; currency?: Currency;
 }) {
   const [focused, setFocused] = React.useState(false);
+  const numberLocale = currency?.locale ?? "en-ZA";
   const displayValue = focused ? value : (isCurrency
-    ? new Intl.NumberFormat("en-ZA", { maximumFractionDigits: 0 }).format(value)
-    : new Intl.NumberFormat("en-ZA", { maximumFractionDigits: 2 }).format(value));
+    ? new Intl.NumberFormat(numberLocale, { maximumFractionDigits: 0 }).format(value)
+    : new Intl.NumberFormat(numberLocale, { maximumFractionDigits: 2 }).format(value));
   return (
     <div className="flex items-center justify-between py-1.5 border-b border-border/20 last:border-0">
       <span className="text-xs text-muted-foreground">{label}</span>
       <div className="flex items-center gap-1">
-        {isCurrency && !focused && <span className="text-xs text-muted-foreground">R</span>}
         <input
           type={focused ? "number" : "text"}
           value={displayValue}
@@ -792,7 +860,7 @@ function InputRow({ label, value, onChange, suffix, min, max, step, isCurrency }
           onChange={e => focused && onChange(Number(e.target.value))}
           className="w-24 text-right text-xs bg-muted/30 border border-border/40 rounded px-2 py-1 text-foreground focus:outline-none focus:border-primary/50"
         />
-        {suffix && <span className="text-xs text-muted-foreground w-12">{suffix}</span>}
+        {suffix && <span className="text-xs text-muted-foreground min-w-12">{suffix}</span>}
       </div>
     </div>
   );
@@ -898,13 +966,13 @@ function ExplanationCard({ onClose }: { onClose: () => void }) {
 }
 
 // ─── Revenue Input Card ───────────────────────────────────────────────────────
-function RevenueInputCard({ mode, setMode, marginPct, setMarginPct, sellingPricePerKm, setSellingPricePerKm, effectiveRatePerKm, dieselCpm, electricCpm, currencySymbol }: {
+function RevenueInputCard({ mode, setMode, marginPct, setMarginPct, sellingPricePerKm, setSellingPricePerKm, effectiveRatePerKm, dieselCpm, electricCpm, currency }: {
   mode: "margin" | "price";
   setMode: (m: "margin" | "price") => void;
   marginPct: number; setMarginPct: (v: number) => void;
   sellingPricePerKm: number; setSellingPricePerKm: (v: number) => void;
   effectiveRatePerKm: number;
-  dieselCpm: number; electricCpm: number; currencySymbol: string;
+  dieselCpm: number; electricCpm: number; currency: Currency;
 }) {
   const dieselMarginPct = effectiveRatePerKm > 0 ? ((effectiveRatePerKm - dieselCpm) / effectiveRatePerKm) * 100 : 0;
   const electricMarginPct = effectiveRatePerKm > 0 ? ((effectiveRatePerKm - electricCpm) / effectiveRatePerKm) * 100 : 0;
@@ -947,11 +1015,11 @@ function RevenueInputCard({ mode, setMode, marginPct, setMarginPct, sellingPrice
             />
             <span className="text-xs text-muted-foreground">%</span>
             <span className="text-xs text-muted-foreground mx-1">→</span>
-            <span className="text-sm font-bold text-primary">{currencySymbol}{effectiveRatePerKm.toFixed(2)}/km</span>
+            <span className="text-sm font-bold text-primary">{formatMoney(effectiveRatePerKm, currency, 2)}/km</span>
           </div>
         ) : (
           <div className="flex items-center gap-1">
-            <span className="text-xs text-muted-foreground">{currencySymbol}</span>
+            <span className="text-xs text-muted-foreground">{currency.symbol}</span>
             <input
               type="number" value={sellingPricePerKm} min={0.1} max={500} step={0.1}
               onChange={e => setSellingPricePerKm(Number(e.target.value))}
@@ -967,12 +1035,12 @@ function RevenueInputCard({ mode, setMode, marginPct, setMarginPct, sellingPrice
         <div className="flex-1 flex items-center gap-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-2">
           <span className="text-xs text-muted-foreground">Diesel</span>
           <span className="text-sm font-bold text-amber-400">{dieselMarginPct.toFixed(1)}%</span>
-          <span className="text-xs text-muted-foreground ml-auto">{currencySymbol}{dieselCpm.toFixed(2)}/km cost</span>
+          <span className="text-xs text-muted-foreground ml-auto">{formatMoney(dieselCpm, currency, 2)}/km cost</span>
         </div>
         <div className="flex-1 flex items-center gap-2 rounded-lg bg-green-500/10 border border-green-500/20 px-3 py-2">
           <span className="text-xs text-muted-foreground">Electric</span>
           <span className="text-sm font-bold text-green-400">{electricMarginPct.toFixed(1)}%</span>
-          <span className="text-xs text-muted-foreground ml-auto">{currencySymbol}{electricCpm.toFixed(2)}/km cost</span>
+          <span className="text-xs text-muted-foreground ml-auto">{formatMoney(electricCpm, currency, 2)}/km cost</span>
         </div>
       </div>
     </div>
@@ -1024,6 +1092,7 @@ export default function TCOv2Client() {
         if (detected && detected !== "ZAR") {
           const newCurrency = getCurrency(detected);
           setInputs(convertDefaults(ZAR_DEFAULTS, newCurrency.rate));
+          setSellingPricePerKm(prev => Math.round(prev * newCurrency.rate * 100) / 100);
           setCurrencyCode(detected);
         }
       })
@@ -1043,7 +1112,16 @@ export default function TCOv2Client() {
 
   const handleCurrencyChange = (code: string) => {
     const newCurrency = getCurrency(code);
-    setInputs(convertDefaults(ZAR_DEFAULTS, newCurrency.rate));
+    if (newCurrency.code === currency.code) {
+      setCurrencyOpen(false);
+      return;
+    }
+    // Keep the operator's existing scenario intact. The calculator currently
+    // stores monetary inputs in the displayed currency, so only money fields
+    // move by the exchange-rate ratio; distance, life and percentages do not.
+    const exchangeRatio = newCurrency.rate / currency.rate;
+    setInputs(prev => scaleMonetaryInputs(prev, exchangeRatio));
+    setSellingPricePerKm(prev => Math.round(prev * exchangeRatio * 100) / 100);
     setCurrencyCode(code);
     setCurrencyOpen(false);
   };
@@ -1126,16 +1204,19 @@ export default function TCOv2Client() {
     router.push("/tco-v2/sensitivity");
   }, [inputs, effectiveRevenuePerKm, currencyCode, currency.symbol, marginPct, router]);
 
-  const fmt = (n: number) =>
-    `${currency.symbol}${new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(Math.round(n))}`;
-  const fmtShort = (n: number) => {
-    const abs = Math.abs(n);
-    const sign = n < 0 ? "-" : "";
-    if (abs >= 1_000_000) return `${sign}${currency.symbol}${(abs / 1_000_000).toFixed(1)}M`;
-    if (abs >= 1_000) return `${sign}${currency.symbol}${(abs / 1_000).toFixed(0)}K`;
-    return `${sign}${currency.symbol}${abs.toFixed(0)}`;
-  };
-  const fmtCpm = (n: number) => `${currency.symbol}${n.toFixed(2)}/km`;
+  const fmt = (n: number) => formatMoney(n, currency);
+  const fmtShort = (n: number) => formatMoneyShort(n, currency);
+  const fmtCpm = (n: number) => `${formatMoney(n, currency, 2)}/km`;
+  const costOutcome = finalResult.totalSaving === 0
+    ? { winner: "Same lifetime cost", detail: "Both options have the same lifetime TCO", color: "text-primary" }
+    : finalResult.totalSaving > 0
+      ? { winner: "Electric is cheaper", detail: `${fmtShort(Math.abs(finalResult.totalSaving))} lower lifetime cost`, color: "text-green-400" }
+      : { winner: "Diesel is cheaper", detail: `${fmtShort(Math.abs(finalResult.totalSaving))} lower lifetime cost`, color: "text-amber-400" };
+  const profitOutcome = finalResult.totalProfitDelta === 0
+    ? { winner: "Same lifetime profit", detail: "Both options generate the same lifetime profit", color: "text-primary" }
+    : finalResult.totalProfitDelta > 0
+      ? { winner: "Electric generates more profit", detail: `${fmtShort(Math.abs(finalResult.totalProfitDelta))} more lifetime profit`, color: "text-green-400" }
+      : { winner: "Diesel generates more profit", detail: `${fmtShort(Math.abs(finalResult.totalProfitDelta))} more lifetime profit`, color: "text-amber-400" };
 
   // Chart data
   const tcoChartData = finalResult.years.map(r => ({
@@ -1184,51 +1265,65 @@ export default function TCOv2Client() {
       `}</style>
       <div className="max-w-5xl mx-auto px-4 pt-28 pb-8">
 
-        {/* ── Header ── */}
-        <div className="flex items-start justify-between mb-6 no-print">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Fleet Profit & TCO Calculator</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Compare diesel vs electric truck profitability over the full vehicle lifetime
-            </p>
-          </div>
-          {/* Context bar */}
-          <div className="flex items-center gap-2 flex-wrap justify-end">
-            <button type="button" onClick={() => setLoginModal("pdf")}
-              className="no-print inline-flex items-center gap-1.5 text-xs bg-muted/30 border border-border/40 rounded-lg px-3 py-2 hover:bg-muted/50 transition-colors">
-              <FileText size={12} /> Download PDF
-            </button>
-            <button type="button" onClick={() => setLoginModal("csv")}
-              className="no-print inline-flex items-center gap-1.5 text-xs bg-muted/30 border border-border/40 rounded-lg px-3 py-2 hover:bg-muted/50 transition-colors">
-              <Download size={12} /> Export CSV
-            </button>
-            {/* Currency */}
-            <div className="relative">
-              <button type="button" onClick={() => setCurrencyOpen(!currencyOpen)}
-                className="flex items-center gap-1.5 text-xs bg-muted/30 border border-border/40 rounded-lg px-3 py-2 hover:bg-muted/50 transition-colors">
-                <span>{currencyCode}</span>
-                <ChevronDown size={12} />
-              </button>
-              {currencyOpen && (
-                <div className="absolute right-0 top-full mt-1 bg-navy-900 border border-border/50 rounded-xl shadow-xl z-50 min-w-[160px] overflow-hidden">
-                  {CURRENCIES.map(c => (
-                    <button key={c.code} type="button" onClick={() => handleCurrencyChange(c.code)}
-                      className={`w-full text-left px-3 py-2 text-xs hover:bg-muted/30 transition-colors ${currencyCode === c.code ? "text-primary font-semibold" : "text-foreground"}`}>
-                      {c.code} — {c.name}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            {/* Truck type */}
-            <input value={truckType} onChange={e => setTruckType(e.target.value)}
-              placeholder="Truck type…"
-              className="text-xs bg-muted/30 border border-border/40 rounded-lg px-3 py-2 text-foreground placeholder:text-muted-foreground/50 w-32 focus:outline-none focus:border-primary/50" />
-            <input value={useCase} onChange={e => setUseCase(e.target.value)}
-              placeholder="Use case…"
-              className="text-xs bg-muted/30 border border-border/40 rounded-lg px-3 py-2 text-foreground placeholder:text-muted-foreground/50 w-32 focus:outline-none focus:border-primary/50" />
-          </div>
+        {/* ── Header and prominently placed tools ── */}
+        <div className="mb-5">
+          <h1 className="text-2xl font-bold text-foreground">Fleet Profit & TCO Calculator</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Compare diesel vs electric truck profitability over the full vehicle lifetime
+          </p>
         </div>
+        <section className="card mb-6 overflow-visible border border-primary/35 bg-primary/[0.035] no-print" aria-label="Currency and report tools">
+          <div className="grid lg:grid-cols-[1.15fr_0.85fr] gap-0">
+            <div className="p-5 lg:border-r border-border/30">
+              <h2 className="text-sm font-bold text-foreground">Currency Selection</h2>
+              <div className="flex flex-col sm:flex-row sm:items-end gap-3 mt-4">
+                <div className="relative min-w-[220px] flex-1">
+                  <label className="block text-xs font-semibold text-foreground mb-1.5">Display currency</label>
+                  <button
+                    type="button"
+                    onClick={() => setCurrencyOpen(!currencyOpen)}
+                    aria-haspopup="listbox"
+                    aria-expanded={currencyOpen}
+                    className="w-full flex items-center justify-between gap-3 text-left bg-background border border-primary/40 rounded-lg px-3 py-2.5 hover:border-primary/70 transition-colors"
+                  >
+                    <span className="text-sm font-semibold text-foreground">{currency.symbol} · {currency.code}</span>
+                    <ChevronDown size={16} className={`text-primary transition-transform ${currencyOpen ? "rotate-180" : ""}`} />
+                  </button>
+                  {currencyOpen && (
+                    <div role="listbox" className="absolute left-0 right-0 top-full mt-1 bg-navy-900 border border-border/50 rounded-xl shadow-2xl z-50 overflow-hidden">
+                      {CURRENCIES.map(c => (
+                        <button key={c.code} type="button" onClick={() => handleCurrencyChange(c.code)}
+                          className={`w-full flex items-center justify-between gap-3 text-left px-3 py-2.5 text-xs hover:bg-muted/30 transition-colors ${currencyCode === c.code ? "bg-primary/10 text-primary font-semibold" : "text-foreground"}`}>
+                          <span>{c.symbol} · {c.code} <span className="text-muted-foreground font-normal">— {c.name}</span></span>
+                          {currencyCode === c.code && <span className="text-[10px] uppercase tracking-wide">Selected</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="p-5">
+              <h2 className="text-sm font-bold text-foreground">Download TCO Results</h2>
+              <div className="grid sm:grid-cols-2 gap-2 mt-4">
+                <button type="button" onClick={() => setLoginModal("pdf")}
+                  className="inline-flex items-center justify-center gap-2 text-xs bg-primary text-primary-foreground rounded-lg px-3 py-2.5 hover:opacity-90 transition-opacity font-semibold">
+                  <FileText size={14} /> Download PDF report
+                </button>
+                <button type="button" onClick={() => setLoginModal("csv")}
+                  className="inline-flex items-center justify-center gap-2 text-xs bg-background border border-border/60 rounded-lg px-3 py-2.5 hover:bg-muted/30 transition-colors font-semibold">
+                  <Download size={14} /> Export CSV data
+                </button>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-2 mt-3">
+                <input value={truckType} onChange={e => setTruckType(e.target.value)} placeholder="Truck type (optional)"
+                  className="text-xs bg-background border border-border/40 rounded-lg px-3 py-2 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50" />
+                <input value={useCase} onChange={e => setUseCase(e.target.value)} placeholder="Use case (optional)"
+                  className="text-xs bg-background border border-border/40 rounded-lg px-3 py-2 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50" />
+              </div>
+            </div>
+          </div>
+        </section>
 
         {/* ── Explanation Card ── */}
         <div
@@ -1272,7 +1367,7 @@ export default function TCOv2Client() {
                   <p className="text-xs font-semibold text-amber-400 uppercase tracking-wide mb-3">Diesel Truck</p>
                   <InputRow label="Monthly kilometres" value={dKm} onChange={set(inputs.decoupleKmLife ? "dieselMonthlyKm" : "monthlyKm") as (v: number) => void} suffix="km/month" min={1000} max={50000} step={500} />
                   <InputRow label="Vehicle life" value={dLife} onChange={set(inputs.decoupleKmLife ? "dieselVehicleLifeYears" : "vehicleLifeYears") as (v: number) => void} suffix="years" min={3} max={15} />
-                  <InputRow label="Purchase price" value={inputs.dieselPurchasePrice} onChange={set("dieselPurchasePrice") as (v: number) => void} suffix={currency.code} min={500000} max={10000000} step={50000} isCurrency />
+                  <InputRow label="Purchase price" value={inputs.dieselPurchasePrice} onChange={set("dieselPurchasePrice") as (v: number) => void} suffix={currency.symbol} min={500000} max={10000000} step={50000} isCurrency currency={currency} />
                   <ToggleRow label="Financed" value={inputs.dieselFinanced} onChange={set("dieselFinanced") as (v: boolean) => void} />
                   {inputs.dieselFinanced && <>
                     <InputRow label="Deposit" value={inputs.dieselDepositPct} onChange={set("dieselDepositPct") as (v: number) => void} suffix="%" min={0} max={50} />
@@ -1280,10 +1375,10 @@ export default function TCOv2Client() {
                     <InputRow label="Finance term" value={inputs.dieselFinanceTerm} onChange={set("dieselFinanceTerm") as (v: number) => void} suffix="months" min={12} max={84} step={12} />
                   </>}
                   <InputRow label="Fuel consumption" value={inputs.dieselFuelConsumption} onChange={set("dieselFuelConsumption") as (v: number) => void} suffix="L/100km" min={15} max={80} step={0.5} />
-                  <InputRow label="Diesel price" value={inputs.dieselFuelPrice} onChange={set("dieselFuelPrice") as (v: number) => void} suffix={`${currency.code}/L`} min={5} max={100} step={0.5} />
+                  <InputRow label="Diesel price" value={inputs.dieselFuelPrice} onChange={set("dieselFuelPrice") as (v: number) => void} suffix={`${currency.symbol}/L`} min={5} max={100} step={0.5} currency={currency} />
                   <InputRow label="Fuel price escalation" value={inputs.dieselFuelEscalation} onChange={set("dieselFuelEscalation") as (v: number) => void} suffix="% p.a." min={0} max={20} step={0.5} />
-                  <InputRow label="Maintenance" value={inputs.dieselMaintenanceCpm} onChange={set("dieselMaintenanceCpm") as (v: number) => void} suffix={`${currency.code}/km`} min={0.1} max={5} step={0.05} />
-                  <InputRow label="Insurance (annual)" value={inputs.dieselInsuranceAnnual} onChange={set("dieselInsuranceAnnual") as (v: number) => void} suffix={currency.code} min={10000} max={500000} step={5000} isCurrency />
+                  <InputRow label="Maintenance" value={inputs.dieselMaintenanceCpm} onChange={set("dieselMaintenanceCpm") as (v: number) => void} suffix={`${currency.symbol}/km`} min={0.1} max={5} step={0.05} currency={currency} />
+                  <InputRow label="Insurance (annual)" value={inputs.dieselInsuranceAnnual} onChange={set("dieselInsuranceAnnual") as (v: number) => void} suffix={currency.symbol} min={10000} max={500000} step={5000} isCurrency currency={currency} />
                   <InputRow label="Residual value" value={inputs.dieselResidualPct} onChange={set("dieselResidualPct") as (v: number) => void} suffix="%" min={0} max={40} />
                 </div>
                 {/* Electric */}
@@ -1291,7 +1386,7 @@ export default function TCOv2Client() {
                   <p className="text-xs font-semibold text-green-400 uppercase tracking-wide mb-3">Electric Truck</p>
                   <InputRow label="Monthly kilometres" value={eKm} onChange={set(inputs.decoupleKmLife ? "electricMonthlyKm" : "monthlyKm") as (v: number) => void} suffix="km/month" min={1000} max={50000} step={500} />
                   <InputRow label="Vehicle life" value={eLife} onChange={set(inputs.decoupleKmLife ? "electricVehicleLifeYears" : "vehicleLifeYears") as (v: number) => void} suffix="years" min={3} max={15} />
-                  <InputRow label="Purchase price" value={inputs.electricPurchasePrice} onChange={set("electricPurchasePrice") as (v: number) => void} suffix={currency.code} min={1000000} max={20000000} step={100000} isCurrency />
+                  <InputRow label="Purchase price" value={inputs.electricPurchasePrice} onChange={set("electricPurchasePrice") as (v: number) => void} suffix={currency.symbol} min={1000000} max={20000000} step={100000} isCurrency currency={currency} />
                   <ToggleRow label="Financed" value={inputs.electricFinanced} onChange={set("electricFinanced") as (v: boolean) => void} />
                   {inputs.electricFinanced && <>
                     <InputRow label="Deposit" value={inputs.electricDepositPct} onChange={set("electricDepositPct") as (v: number) => void} suffix="%" min={0} max={50} />
@@ -1299,10 +1394,10 @@ export default function TCOv2Client() {
                     <InputRow label="Finance term" value={inputs.electricFinanceTerm} onChange={set("electricFinanceTerm") as (v: number) => void} suffix="months" min={12} max={84} step={12} />
                   </>}
                   <InputRow label="Energy consumption" value={inputs.electricEnergyConsumption} onChange={set("electricEnergyConsumption") as (v: number) => void} suffix="kWh/100km" min={50} max={400} step={5} />
-                  <InputRow label="Electricity tariff" value={inputs.electricEnergyPrice} onChange={set("electricEnergyPrice") as (v: number) => void} suffix={`${currency.code}/kWh`} min={0.5} max={20} step={0.1} />
+                  <InputRow label="Electricity tariff" value={inputs.electricEnergyPrice} onChange={set("electricEnergyPrice") as (v: number) => void} suffix={`${currency.symbol}/kWh`} min={0.5} max={20} step={0.1} currency={currency} />
                   <InputRow label="Tariff escalation" value={inputs.electricEnergyEscalation} onChange={set("electricEnergyEscalation") as (v: number) => void} suffix="% p.a." min={0} max={20} step={0.5} />
-                  <InputRow label="Maintenance" value={inputs.electricMaintenanceCpm} onChange={set("electricMaintenanceCpm") as (v: number) => void} suffix={`${currency.code}/km`} min={0.05} max={3} step={0.05} />
-                  <InputRow label="Insurance (annual)" value={inputs.electricInsuranceAnnual} onChange={set("electricInsuranceAnnual") as (v: number) => void} suffix={currency.code} min={10000} max={500000} step={5000} isCurrency />
+                  <InputRow label="Maintenance" value={inputs.electricMaintenanceCpm} onChange={set("electricMaintenanceCpm") as (v: number) => void} suffix={`${currency.symbol}/km`} min={0.05} max={3} step={0.05} currency={currency} />
+                  <InputRow label="Insurance (annual)" value={inputs.electricInsuranceAnnual} onChange={set("electricInsuranceAnnual") as (v: number) => void} suffix={currency.symbol} min={10000} max={500000} step={5000} isCurrency currency={currency} />
                   <InputRow label="Residual value" value={inputs.electricResidualPct} onChange={set("electricResidualPct") as (v: number) => void} suffix="%" min={0} max={40} />
                 </div>
               </div>
@@ -1326,7 +1421,7 @@ export default function TCOv2Client() {
           sellingPricePerKm={sellingPricePerKm} setSellingPricePerKm={setSellingPricePerKm}
           effectiveRatePerKm={effectiveRevenuePerKm}
           dieselCpm={finalResult.dieselCpm} electricCpm={finalResult.electricCpm}
-          currencySymbol={currency.symbol}
+          currency={currency}
         />
 
         {/* ══════════════════════════════════════════════════════════════════
@@ -1338,13 +1433,12 @@ export default function TCOv2Client() {
             <div className="flex items-start justify-between mb-1">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Cumulative Cost (TCO)</h3>
               <div className="text-right">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">Lifetime Cost Difference</p>
-                <p className={`text-sm font-bold ${finalResult.totalSaving > 0 ? 'text-green-400' : 'text-amber-400'}`}>
-                  {finalResult.totalSaving > 0 ? '−' : '+'}{fmtShort(Math.abs(finalResult.totalSaving))} electric saves
-                </p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">Lifetime Cost Outcome</p>
+                <p className={`text-sm font-bold ${costOutcome.color}`}>{costOutcome.winner}</p>
+                <p className={`text-xs ${costOutcome.color}`}>{costOutcome.detail}</p>
               </div>
             </div>
-            <p className="text-xs text-muted-foreground mb-3">Total accumulated cost including purchase and operating costs.</p>
+            <p className="text-xs text-muted-foreground mb-3">Lower curve = lower lifetime cost. The callout names the cheaper option.</p>
             <ResponsiveContainer width="100%" height={160}>
               <LineChart data={tcoChartData} margin={{ top: 4, right: 64, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -1365,13 +1459,12 @@ export default function TCOv2Client() {
             <div className="flex items-start justify-between mb-1">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Cumulative Profit</h3>
               <div className="text-right">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">Lifetime Profit Difference</p>
-                <p className={`text-sm font-bold ${finalResult.totalProfitDelta > 0 ? 'text-green-400' : 'text-amber-400'}`}>
-                  {finalResult.totalProfitDelta > 0 ? '+' : ''}{fmtShort(finalResult.totalProfitDelta)} electric advantage
-                </p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">Lifetime Profit Outcome</p>
+                <p className={`text-sm font-bold ${profitOutcome.color}`}>{profitOutcome.winner}</p>
+                <p className={`text-xs ${profitOutcome.color}`}>{profitOutcome.detail}</p>
               </div>
             </div>
-            <p className="text-xs text-muted-foreground mb-3">Total profit generated per truck after all costs, at your revenue rate.</p>
+            <p className="text-xs text-muted-foreground mb-3">Higher curve = more lifetime profit. The callout names the stronger option.</p>
             <ResponsiveContainer width="100%" height={160}>
               <LineChart data={profitChartData} margin={{ top: 4, right: 64, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -1400,7 +1493,7 @@ export default function TCOv2Client() {
               Profit Optimiser
             </h2>
             <span className="text-xs text-muted-foreground/60 italic flex items-center gap-1">
-              <span>↔</span> drag sliders to optimise
+              <span>↔</span> auto-scales to your currency and inputs
             </span>
           </div>
           <div className="grid grid-cols-2 gap-0 divide-x divide-border/30">
@@ -1414,7 +1507,7 @@ export default function TCOv2Client() {
                     config={cfg}
                     value={inputs[cfg.field] as number}
                     onChange={set(cfg.field) as (v: number) => void}
-                    currencySymbol={currency.symbol}
+                    currency={currency}
                     accentColor="amber"
                   />
                 ))}
@@ -1430,7 +1523,7 @@ export default function TCOv2Client() {
                     config={cfg}
                     value={inputs[cfg.field] as number}
                     onChange={set(cfg.field) as (v: number) => void}
-                    currencySymbol={currency.symbol}
+                    currency={currency}
                     accentColor="green"
                   />
                 ))}
